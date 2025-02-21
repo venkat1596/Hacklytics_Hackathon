@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from .Xsmish import Smish
 from .Fsmish import smish as Fsmish
-
+from .pixelshuffle_3d import PixelShuffle3d
 
 class DoubleConvBlock(nn.Module):
     def __init__(self, in_features, mid_features,
@@ -67,32 +67,66 @@ class DilatedConvBlock(nn.Module):
         self.layers = nn.Sequential(*self.layers)
 
     def forward(self, x):
+        x_copy = x.clone()
         x = self.layers(x)
+        x += x_copy
         return x
+
 
 class UpConvBlock(nn.Module):
     def __init__(self, in_features, up_scale):
         super(UpConvBlock, self).__init__()
         self.up_factor = 2
-        self.constant_features = 16
-
         layers = self.make_deconv_layers(in_features, up_scale)
         assert layers is not None, layers
         self.features = nn.Sequential(*layers)
 
     def make_deconv_layers(self, in_features, up_scale):
         layers = []
-        all_pads=[0,0,1,3,7]
+
         for i in range(up_scale):
-            kernel_size = 2 ** up_scale
-            pad = all_pads[up_scale]  # kernel_size-1
+            # Fixed kernel size of 2 for each upsampling step
+            kernel_size = 2
+            # Calculate appropriate padding
+            pad = kernel_size // 2
             out_features = in_features
+
+            # 1x1x1 convolution to adjust feature channels
             layers.append(nn.Conv3d(in_features, out_features, 1))
             layers.append(Smish())
+
+            # Transposed convolution for upsampling
             layers.append(nn.ConvTranspose3d(
-                out_features, out_features, kernel_size, stride=2, padding=pad))
+                out_features, out_features,
+                kernel_size=kernel_size,
+                stride=2,
+                padding=pad,
+                output_padding=1  # Ensures correct output size
+            ))
+
             in_features = out_features
+
         return layers
+
+    def forward(self, x):
+        return self.features(x)
+
+class DoubleFusion(nn.Module):
+    def __init__(self, in_ch):
+        super(DoubleFusion, self).__init__()
+        self.DWconv1 = nn.Conv3d(in_ch, in_ch*8, kernel_size=3,
+                               stride=1, padding=1, groups=in_ch)
+        self.PSconv1 = PixelShuffle3d(1)
+        self.DWconv2 = nn.Conv3d(in_ch*8, in_ch*8, kernel_size=3,
+                               stride=1, padding=1, groups=in_ch*8)
+        self.final_conv = nn.Conv3d(in_ch*8, in_ch, kernel_size=3,
+                                  stride=1, padding=1, groups=in_ch)
+        self.AF = Smish()
+
+    def forward(self, x):
+        attn = self.PSconv1(self.DWconv1(self.AF(x)))
+        attn2 = self.PSconv1(self.DWconv2(self.AF(attn)))
+        return Fsmish(self.final_conv(attn2 + attn))
 
 class Unet(nn.Module):
     def __init__(self, in_channels, out_channels, features):
@@ -118,11 +152,15 @@ class Unet(nn.Module):
         self.upblock3 = UpConvBlock(features*2, 1)
         self.upblock2 = UpConvBlock(features*2, 1)
         self.correctionblock2 = SingleConv(features*2, features)
-        self.upblock1 = UpConvBlock(features, 1)
 
-
+        # decoder fuse block
+        self.fuse_block3 = DoubleFusion(features * 4)
+        self.fuse_conv3 = SingleConv(features * 4, features)
+        self.fuse_block2 = DoubleFusion(features * 2)
+        self.fuse_conv2 = SingleConv(features * 2, features)
 
         self.final_conv = nn.Conv3d(features, out_channels, kernel_size=1)
+        self.final_act = nn.Tanh()
 
     def forward(self, x):
         x1 = self.conv1(x)
@@ -139,6 +177,19 @@ class Unet(nn.Module):
 
         x3_up = self.upblock3(x4)
         x3_up = torch.cat([x3_skip, x3_up], dim=1)
+        x3_fuse = self.fuse_block3(x3_up)
+        x3_fuse = self.fuse_conv3(x3_fuse)
+
+        x2_up = self.upblock2(x3_fuse)
+        x2_up = torch.cat([x2_skip, x2_up], dim=1)
+        x2_fuse = self.fuse_block2(x2_up)
+        x2_fuse = self.fuse_conv2(x2_fuse)
+
+        x1 = self.final_conv(x2_fuse)
+        x1 = self.final_act(x1)
+
+        return x1
+
 
 
 
