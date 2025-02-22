@@ -36,7 +36,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </div>
 
         <div className="mt-4 text-sm">
-          © 2023 Relume. All rights reserved. 
+          © 2025 Mancy. All rights reserved. 
           <a href="#" className="ml-4 hover:underline">Privacy Policy</a> | 
           <a href="#" className="hover:underline"> Terms of Service</a> | 
           <a href="#" className="hover:underline"> Cookies Settings</a>
