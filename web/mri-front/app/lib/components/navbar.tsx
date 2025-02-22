@@ -27,9 +27,9 @@ const Navbar1: FunctionComponent<Navbar1Type> = ({
           />
         </div>
         <div className="overflow-hidden flex flex-row items-start justify-start gap-8">
-          <div className="relative leading-[150%]">Link One</div>
-          <div className="relative leading-[150%]">Link Two</div>
-          <div className="relative leading-[150%]">Link Three</div>
+          <div className="relative leading-[150%]">Demo</div>
+          <div className="relative leading-[150%]">Our Process</div>
+          <div className="relative leading-[150%]">About Us</div>
           <div className="flex flex-row items-center justify-center gap-1">
             <div className="relative leading-[150%]">Link Four</div>
             <img
