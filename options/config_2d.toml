@@ -1,0 +1,45 @@
+# config.toml
+
+[paths]
+train_source_dir = "./data/ConstraintTest/trainA"  # Directory containing 1.5T images
+train_target_dir = "./data/ConstraintTest/trainB"  # Directory containing 3T images
+
+valid_source_dir = "./data/ConstraintTest/testA"  # Directory containing validation images
+valid_target_dir = "./data/ConstraintTest/testB"  # Directory containing test images
+
+stats_file = "stats/dataset_stats.json"
+checkpoint_dir = "two_dim/checkpoints"
+visualization_dir = "two_dim/visualizations"
+
+[datamodule]
+batch_size = 4
+num_workers = 8
+source_rotation_angle = 10.0
+source_translation = 0.1
+target_rotation_angle = 5.0
+target_translation = 0.05
+
+[generator]
+model = "SAFM"
+features = 32
+n_blocks = 4
+ffn_scale = 2.0
+cycle_weight = 10.0
+identity_weight = 5.0
+min_lr = 1e-6
+lr = 1e-4
+
+[discriminator]
+model = "patch_gan"
+in_channels = 1
+features = 32
+min_lr = 1e-6
+lr = 1e-4
+
+[trainer]
+max_epochs = 50
+accelerator = "gpu"
+devices = 1
+precision = '16-mixed'
+log_every_n_steps = 10
+check_val_every_n_epoch = 5
