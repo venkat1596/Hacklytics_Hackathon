@@ -11,4 +11,6 @@
   *  
 * [Video]()
 ### Installation/Run Reminders
-* To be decieded
+#### Frontend
+* To install the required packages
+  * run ```npm install``` in the web/mri-front directory
