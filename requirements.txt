@@ -1,0 +1,10 @@
+pytorch-lightning
+pydicom
+nibabel
+numpy
+pandas
+plotly
+tqdm
+albumentations
+kornia
+
