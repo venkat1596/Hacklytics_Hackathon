@@ -1,40 +1,47 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { IconCloudUpload, IconDownload, IconX } from '@tabler/icons-react';
 import { Button, Group, Text, useMantineTheme } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import classes from './DropzoneButton.module.css';
+import axios from 'axios';
 
 export function DropzoneButton() {
   const theme = useMantineTheme();
   const openRef = useRef<() => void>(null);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [uploadMessage, setUploadMessage] = useState('');
 
   // Function to handle file upload
   const handleDrop = async (files: File[]) => {
-    if (files.length === 0) return;
-
-    const file = files[0]; // Only take the first file
-    const formData = new FormData();
-    formData.append("image", file);
-
+    console.log("Within Function");
+    if (!files.length) return;
+  
+    const file = files[0];
+    const data = new FormData();
+    data.append('image', file, file.name); // Wrap the file in FormData
+  
     try {
-      const response = await fetch("http://localhost:8000/send-and-rec", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post("http://127.0.0.1:8000/send-and-rec", data, {
+        headers: {
+          'accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.8',
+          'Content-Type': 'multipart/form-data',
+        },
       });
-
-      const result = await response.json();
-      console.log("Upload Success:", result);
+  
+      console.log('Upload success:', response.data);
     } catch (error) {
-      console.error("Upload Error:", error);
+      console.error('Upload failed:', error);
     }
   };
+  
 
   return (
     <div className={classes.wrapper}>
       <Dropzone
         openRef={openRef}
-        onDrop={handleDrop}  // Updated to send the file
+        onDrop={(files) => handleDrop(files)}  // Updated to send the file
         className={classes.dropzone}
         radius="md"
         accept={["image/jpeg"]}
