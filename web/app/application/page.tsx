@@ -1,8 +1,9 @@
 import React from "react";
 import { NavbarSimpleColored } from "../lib/SideBar"; // Sidebar/Navbar
 import NotebookViewer from "../lib/ApplicationShell"; // Import the Notebook Viewer
-import styles from "../page.module.css"; // Import the same styles
-import { HeroText } from "../lib/HeroText"; // Import the HeroText component
+import styles from "../page.module.css"; // Import styles
+import { HeroText } from "../lib/HeroText"; // Import HeroText
+import { DropzoneButton } from "../lib/DropzoneButton"; // Import DropzoneButton
 
 const ApplicationPage: React.FC = () => {
   return (
@@ -10,8 +11,8 @@ const ApplicationPage: React.FC = () => {
       <NavbarSimpleColored /> {/* Sidebar */}
       <div className={styles.content}>
         <main>
-        <HeroText />
-          <NotebookViewer /> {/* Embed Notebook Viewer */}
+          <HeroText />
+          <DropzoneButton /> {/* Use DropzoneButton instead of Dropzone */}
         </main>
       </div>
     </div>
@@ -19,3 +20,4 @@ const ApplicationPage: React.FC = () => {
 };
 
 export default ApplicationPage;
+
