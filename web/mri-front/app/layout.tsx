@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "./lib/components/footer";
-import Navigation1 from "./lib/components/Navigation1";
+import Navbar1 from "./lib/components/navbar";
+import Header from "./lib/components/homeHeader";
+import { Router } from "react-router-dom";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +31,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navigation1/>
+        <Navbar1/>
+        <Header />
         <Footer />
         {children}
       </body>
