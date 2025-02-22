@@ -1,20 +1,19 @@
-import React from 'react';
-import { HeaderSimple } from '../lib/HeaderSimple';
-import { FooterCentered } from '../lib/FooterCentered';
-import { FaqSimple } from '../lib/FaqSimple'; // Ensure this import is correct
-import JupyterNotebookViewer from '../lib/Jupiter'; // Import the JupyterNotebookViewer component
+import React from "react";
+import { NavbarSimpleColored } from "../lib/SideBar"; // Sidebar/Navbar
+import NotebookViewer from "../lib/ApplicationShell"; // Import the Notebook Viewer
+import styles from "../page.module.css"; // Import the same styles
+import { HeroText } from "../lib/HeroText"; // Import the HeroText component
 
 const ApplicationPage: React.FC = () => {
-  // Define the URL of the Jupyter notebook
-  const notebookUrl = 'https://example.com/my-notebook.ipynb';
-
   return (
-    <div>
-      <HeaderSimple />
-      <main>
-        <FaqSimple /> {/* Ensure this is used correctly */}
-      </main>
-      <FooterCentered />
+    <div className={styles.container}>
+      <NavbarSimpleColored /> {/* Sidebar */}
+      <div className={styles.content}>
+        <main>
+        <HeroText />
+          <NotebookViewer /> {/* Embed Notebook Viewer */}
+        </main>
+      </div>
     </div>
   );
 };
