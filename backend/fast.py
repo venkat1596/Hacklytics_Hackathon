@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
@@ -8,7 +8,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "https://your-production-url.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,10 +23,12 @@ async def root():
 
 @app.post("/send-and-rec")
 async def send_and_rec(image: UploadFile = File(...)):
-    file_path = f"{UPLOAD_FOLDER}/{image.filename}"
-    
-    # Save the uploaded image
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
+    try:
+        file_path = f"{UPLOAD_FOLDER}/{image.filename}"
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
 
-    return {"filename": image.filename, "message": "Upload successful"}
+        return {"filename": image.filename, "message": "Upload successful"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

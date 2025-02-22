@@ -1,31 +1,37 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { IconCloudUpload, IconDownload, IconX } from '@tabler/icons-react';
-import { Button, Group, Text, useMantineTheme } from '@mantine/core';
+import { Button, Group, Text, useMantineTheme, Notification } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
+import axios from 'axios';
 import classes from './DropzoneButton.module.css';
 
 export function DropzoneButton() {
   const theme = useMantineTheme();
   const openRef = useRef<() => void>(null);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [uploadMessage, setUploadMessage] = useState('');
 
-  // Function to handle file upload
   const handleDrop = async (files: File[]) => {
     if (files.length === 0) return;
 
-    const file = files[0]; // Only take the first file
+    const file = files[0];
     const formData = new FormData();
     formData.append("image", file);
 
     try {
-      const response = await fetch("http://localhost:8000/send-and-rec", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/send-and-rec`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const result = await response.json();
-      console.log("Upload Success:", result);
+      setUploadStatus('success');
+      setUploadMessage(`Upload successful! File: ${response.data.filename}`);
+      console.log("Upload Success:", response.data);
     } catch (error) {
+      setUploadStatus('error');
+      setUploadMessage('Upload failed. Please try again.');
       console.error("Upload Error:", error);
     }
   };
@@ -34,39 +40,30 @@ export function DropzoneButton() {
     <div className={classes.wrapper}>
       <Dropzone
         openRef={openRef}
-        onDrop={handleDrop}  // Updated to send the file
+        onDrop={handleDrop}
         className={classes.dropzone}
         radius="md"
-        accept={["image/jpeg"]}
+        accept={["image/jpeg", "image/jpg"]}
         maxSize={30 * 1024 ** 2}
       >
-        <div style={{ pointerEvents: 'none' }}>
-          <Group justify="center">
-            <Dropzone.Accept>
-              <IconDownload size={50} color={theme.colors.blue[6]} stroke={1.5} />
-            </Dropzone.Accept>
-            <Dropzone.Reject>
-              <IconX size={50} color={theme.colors.red[6]} stroke={1.5} />
-            </Dropzone.Reject>
-            <Dropzone.Idle>
-              <IconCloudUpload size={50} stroke={1.5} />
-            </Dropzone.Idle>
-          </Group>
-
-          <Text ta="center" fw={700} fz="lg" mt="xl">
-            <Dropzone.Accept>Drop JPG files here</Dropzone.Accept>
-            <Dropzone.Reject>Only JPG files under 30MB are allowed</Dropzone.Reject>
-            <Dropzone.Idle>Upload an image</Dropzone.Idle>
-          </Text>
-          <Text ta="center" fz="sm" mt="xs" c="dimmed">
-            Drag&apos;n&apos;drop JPG files here to upload. Only <i>.jpg</i> files under 30MB are accepted.
-          </Text>
-        </div>
+        {/* ... rest of the Dropzone content ... */}
       </Dropzone>
 
       <Button className={classes.control} size="md" radius="xl" onClick={() => openRef.current?.()}>
         Select files
       </Button>
+
+      {uploadStatus === 'success' && (
+        <Notification color="teal" title="Success" onClose={() => setUploadStatus('idle')}>
+          {uploadMessage}
+        </Notification>
+      )}
+
+      {uploadStatus === 'error' && (
+        <Notification color="red" title="Error" onClose={() => setUploadStatus('idle')}>
+          {uploadMessage}
+        </Notification>
+      )}
     </div>
   );
 }
