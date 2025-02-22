@@ -15,13 +15,8 @@ class ConvModule(nn.Module):
         self.first_norm = nn.InstanceNorm3d(out_channels)
         self.act = Smish()
 
-        self.conv_second = nn.Conv3d(out_channels, out_channels, kernel_size=kernel_size,
-                                    padding=kernel_size//2)
-        self.second_norm = nn.InstanceNorm3d(out_channels)
-
     def forward(self, x):
         x = self.act(self.first_norm(self.conv_first(x)))
-        x = self.act(self.second_norm(self.conv_second(x)))
         return x
 
 class Downsample(nn.Module):
@@ -34,7 +29,7 @@ class Downsample(nn.Module):
         x = self.conv(self.pad(x))
         return x
 
-class Discriminator(nn.Module):
+class PatchDisc(nn.Module):
     def __init__(self, in_channels, features):
         super().__init__()
 

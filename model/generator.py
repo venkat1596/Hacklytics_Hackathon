@@ -6,6 +6,19 @@ from .Xsmish import Smish
 from .Fsmish import smish as Fsmish
 from .pixelshuffle_3d import PixelShuffle3d
 
+def weight_init(m):
+    if isinstance(m, (nn.Conv3d,)):
+        torch.nn.init.xavier_normal_(m.weight, gain=1.0)
+
+        if m.bias is not None:
+            torch.nn.init.zeros_(m.bias)
+
+    # for fusion layer
+    if isinstance(m, (nn.ConvTranspose3d,)):
+        torch.nn.init.xavier_normal_(m.weight, gain=1.0)
+        if m.bias is not None:
+            torch.nn.init.zeros_(m.bias)
+
 class DoubleConvBlock(nn.Module):
     def __init__(self, in_features, mid_features,
                  out_features=None,
@@ -151,6 +164,10 @@ class Unet(nn.Module):
         x1 = self.final_act(x1)
 
         return x1
+
+    def set_requires_grad(self, requires_grad=False):
+        for param in self.parameters():
+            param.requires_grad = requires_grad
 
 
 
