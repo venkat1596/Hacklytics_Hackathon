@@ -68,7 +68,7 @@ export function NavbarSimpleColored() {
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
           <Code fw={700} className={classes.version}>
-            v3.01.01
+            MIR.AI
           </Code>
         </Group>
         {links}
