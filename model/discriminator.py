@@ -55,7 +55,7 @@ class Discriminator(nn.Module):
         self.down4 = Downsample(features*4)
 
 
-        self.final_conv = nn.Conv2d(features*4, features, kernel_size=4, stride=1, padding=1)
+        self.final_conv = nn.Conv3d(features*4, features, kernel_size=4, stride=1, padding=1)
 
     def forward(self, x):
         x = self.conv1(x)

@@ -71,13 +71,14 @@ class DilatedConvBlock(nn.Module):
         return x
 
 class Upsampler(nn.Module):
-    def __init__(self, features, upscale, stride):
+    def __init__(self, features, upscale, stride, output_padding):
         super().__init__()
         layers = []
         for _ in range(upscale):
             layers.append(nn.Conv3d(features, features, 3, padding=1))
             layers.append(Smish())
-            layers.append(nn.ConvTranspose3d(features, features, kernel_size=3, padding=1, stride=stride))
+            layers.append(nn.ConvTranspose3d(features, features, kernel_size=3, padding=1, output_padding=output_padding,
+                                             stride=stride))
         self.conv_t = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -118,8 +119,8 @@ class Unet(nn.Module):
         # Decoder
 
         # up blocks
-        self.upblock3 = Upsampler(features, 1, stride=(1, 2, 2))
-        self.upblock2 = Upsampler(features, 1, stride=(2, 2, 2))
+        self.upblock3 = Upsampler(features, 1, stride=(1, 2, 2), output_padding=(0, 1, 1))
+        self.upblock2 = Upsampler(features, 1, stride=(2, 2, 2), output_padding=(1, 1, 1))
 
         # decoder fuse block
         self.fuse_block3 = DoubleFusion(features * 2)
