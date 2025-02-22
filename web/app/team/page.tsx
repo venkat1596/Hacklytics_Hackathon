@@ -1,24 +1,22 @@
 import React from 'react';
 import { HeaderSimple } from '../lib/HeaderSimple';
 import { FooterCentered } from '../lib/FooterCentered';
-import { FeaturesImages } from '../lib/FeaturesImages';
-import { HeroText } from '../lib/HeroText';
+import { FeaturesCards } from '../lib/FeaturesCards';
 import { NavbarSimpleColored } from '../lib/SideBar'; // Import the navbar
 import styles from '../page.module.css'; // Import the same styles
 
-const AboutPage: React.FC = () => {
+const TeamPage: React.FC = () => {
   return (
     <div className={styles.container}>
       <NavbarSimpleColored /> {/* Add the navbar */}
       <div className={styles.content}>
         <HeaderSimple />
         <main>
-          <HeroText />
-          <FeaturesImages />
+          <FeaturesCards />
         </main>
       </div>
     </div>
   );
 };
 
-export default AboutPage;
+export default TeamPage;

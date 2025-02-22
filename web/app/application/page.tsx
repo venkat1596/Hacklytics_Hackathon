@@ -1,6 +1,7 @@
 import React from 'react';
 import { HeaderSimple } from '../lib/HeaderSimple';
 import { FooterCentered } from '../lib/FooterCentered';
+import { FaqSimple } from '../lib/FaqSimple'; // Ensure this import is correct
 import JupyterNotebookViewer from '../lib/Jupiter'; // Import the JupyterNotebookViewer component
 
 const ApplicationPage: React.FC = () => {
@@ -11,7 +12,7 @@ const ApplicationPage: React.FC = () => {
     <div>
       <HeaderSimple />
       <main>
-        <JupyterNotebookViewer notebookUrl={notebookUrl} /> {/* Pass the notebookUrl prop */}
+        <FaqSimple /> {/* Ensure this is used correctly */}
       </main>
       <FooterCentered />
     </div>

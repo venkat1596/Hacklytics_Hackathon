@@ -1,17 +1,17 @@
-// page.tsx
-import Image from "next/image";
-import { HeaderSimple } from "./lib/HeaderSimple"; // Adjust the import path as necessary
-import { HeroBullets } from "./lib/HeroBullets"; // Adjust the import path as necessary
-import { FooterCentered } from "./lib/FooterCentered"; // Adjust the import path as necessary
-import styles from "./page.module.css";
+import { HeaderSimple } from "./lib/HeaderSimple";
+import { HeroBullets } from "./lib/HeroBullets";
+import { FooterCentered } from "./lib/FooterCentered";
+import { NavbarSimpleColored } from "./lib/SideBar";
+import styles from "./page.module.css"; // Ensure styles are properly defined
 
 export default function Home() {
   return (
-    <div className="home">
-      <HeaderSimple />
-      <HeroBullets />
-      <FooterCentered />
+    <div className={styles.container}>
+      <NavbarSimpleColored />
+      <div className={styles.content}>
+        <HeaderSimple />
+        <HeroBullets />
+      </div>
     </div>
   );
 }
-

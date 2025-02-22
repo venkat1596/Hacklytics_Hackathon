@@ -7,7 +7,7 @@
   --button-secondary-hover: #f2f2f2;
 
   display: grid;
-  grid-template-rows: 20px 1fr 20px;
+  grid-template-rows: auto 1fr auto; /* Adjusted to ensure footer is at the bottom */
   align-items: center;
   justify-items: center;
   min-height: 100svh;
@@ -93,9 +93,11 @@ a.secondary {
 }
 
 .footer {
-  grid-row-start: 3;
+  grid-row-start: 3; /* Ensure footer is in the third row */
   display: flex;
   gap: 24px;
+  width: 100%; /* Ensure footer spans the full width */
+  justify-content: center; /* Center footer content */
 }
 
 .footer a {
@@ -142,6 +144,7 @@ a.secondary {
 
   .ctas {
     flex-direction: column;
+  align-items: center;
   }
 
   .ctas a {
@@ -165,4 +168,20 @@ a.secondary {
   .logo {
     filter: invert();
   }
+}
+
+.container {
+  display: flex;
+  height: 100vh; /* Full height */
+}
+
+.navbar {
+  width: 250px; /* Adjust width as needed */
+  flex-shrink: 0; /* Prevent navbar from shrinking */
+}
+
+.content {
+  flex-grow: 1; /* Allow content to take up remaining space */
+  display: flex;
+  flex-direction: column;
 }
