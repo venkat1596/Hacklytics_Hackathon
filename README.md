@@ -7,8 +7,7 @@
   * We believe this will increase access, especially for third world access where even keeping on the lights is a budgetery issue.  
 
 ### Details
-* [Powerpoint with more info on this project](https://docs.google.com/presentation/d/1BkbNGrVA0agTMpkpehzaJqENou5NLx1ZeVcW2eblpRU/edit?usp=sharing)
-  *  
-* [Video]()
+* [Demo Video]()
 ### Installation/Run Reminders
-* To be decieded
+* To run the frontend, enter the web directory and use npm install. 
+* To run the backend and test our pipelines, install the requirements file
