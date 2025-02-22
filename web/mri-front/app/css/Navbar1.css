@@ -1,0 +1,86 @@
+.company-logo-icon {
+    height: 27px;
+    width: 63px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .content9 {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  .link-one {
+    position: relative;
+    line-height: 150%;
+  }
+  .link-two {
+    position: relative;
+    line-height: 150%;
+  }
+  .link-three {
+    position: relative;
+    line-height: 150%;
+  }
+  .link-four {
+    position: relative;
+    line-height: 150%;
+  }
+  .chevron-down-icon {
+    width: 24px;
+    position: relative;
+    height: 24px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .nav-link-dropdown {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-9xs);
+  }
+  .column {
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--gap-13xl);
+  }
+  .actions1 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .container1 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-13xl);
+  }
+  .navbar-2 {
+    width: 1440px;
+    background-color: var(--text-alternate);
+    border-bottom: 1px solid var(--color-neutral-black);
+    box-sizing: border-box;
+    height: 72px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0px var(--padding-45xl);
+    text-align: left;
+    font-size: var(--text-regular-semi-bold-size);
+    color: var(--color-neutral-black);
+    font-family: var(--text-regular-semi-bold);
+  }
+  
