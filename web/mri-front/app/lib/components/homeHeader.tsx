@@ -21,15 +21,12 @@ const Header: FunctionComponent<HeaderType> = ({
       <header className="self-stretch flex flex-col items-start justify-start text-left text-37xl text-color-neutral-black font-text-regular-normal">
         <div className="w-[1312px] border-color-neutral-black border-solid border-[1px] box-border overflow-hidden flex flex-row items-center justify-start">
           <div className="self-stretch flex-[0.8537] flex flex-col items-start justify-center p-29xl gap-6">
-            <div className="self-stretch flex flex-col items-start justify-start gap-6">
+            <div className="self-stretch flex flex-col items-start justify-start gap-6 pl-4"> 
               <h1 className="m-0 self-stretch relative text-inherit leading-[120%] font-bold font-[inherit]">
-                Medium length hero headline goes here
+              Welcome to the MRI Cycle Gan Superimposer
               </h1>
               <div className="self-stretch relative text-lg leading-[150%]">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                Suspendisse varius enim in eros elementum tristique. Duis
-                cursus, mi quis viverra ornare, eros dolor interdum nulla, ut
-                commodo diam libero vitae erat.
+              Our tool enables medical profesionals to have access to cost prohibitive quality with relatively inexpenseive hardware. Check it out for yourself!
               </div>
             </div>
             <div className="flex flex-row items-start justify-start pt-4 px-0 pb-0 gap-4">
@@ -38,14 +35,14 @@ const Header: FunctionComponent<HeaderType> = ({
                 iconPosition="No icon"
                 small={false}
                 style="Primary"
-                button="Button"
+                button="Upload"
               />
               <Button
                 darkMode={false}
                 iconPosition="No icon"
                 small={false}
                 style="Secondary"
-                button="Button"
+                button="Run?"   //Loe key their may not be a purpose for this button. 
               />
             </div>
           </div>
