@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,6 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import nibabel as nib
 import gc
+from pathlib import Path
+from PIL import Image
 
 # Import all the model classes defined earlier
 from mri_cycle_free_gan import (
@@ -21,118 +24,116 @@ def clear_gpu_memory():
         torch.cuda.empty_cache()
         gc.collect()
 
-def load_and_preprocess_nii(file_path):
-    """Load and preprocess NIfTI file"""
-    # Load NIfTI file
-    nii_img = nib.load(file_path)
-    img_data = nii_img.get_fdata()
+def load_slices(base_path, type_folder):
+    """Load all slices from a folder"""
+    folder_path = Path(base_path) / type_folder
+    slices = []
     
-    # Get middle slice if 3D
-    if len(img_data.shape) == 3:
-        middle_slice = img_data.shape[2] // 2
-        img_data = img_data[:, :, middle_slice]
+    # Get all image files and sort them
+    files = sorted([f for f in os.listdir(folder_path) if f.endswith(('.png', '.jpg', '.jpeg'))])
     
-    # Normalize to [0,1]
-    p1, p99 = np.percentile(img_data, (1, 99))
-    img_data = np.clip(img_data, p1, p99)
-    img_data = (img_data - p1) / (p99 - p1)
+    for file_name in files:
+        img_path = folder_path / file_name
+        # Load image in grayscale
+        img = Image.open(img_path).convert('L')
+        # Resize to 128x128
+        img = img.resize((128, 128), Image.Resampling.LANCZOS)
+        # Convert to numpy array and normalize
+        img_array = np.array(img, dtype=np.float32) / 255.0
+        slices.append(img_array)
     
-    # Resize to 128x128 if needed
-    if img_data.shape != (128, 128):
-        img_data = torch.nn.functional.interpolate(
-            torch.from_numpy(img_data).float().unsqueeze(0).unsqueeze(0),
-            size=(128, 128),
-            mode='bilinear',
-            align_corners=False
-        ).squeeze().numpy()
-    
-    return img_data
+    return np.stack(slices)
 
-def test_with_real_images():
-    print("Starting test with real MRI images...")
+def preprocess_volumes(base_path):
+    """Load and preprocess both 1.5T and 3T volumes"""
+    # Load slices from both folders
+    low_field_volume = load_slices(base_path, '1.5T')
+    high_field_volume = load_slices(base_path, '3T')
     
-    # Set device
+    print(f"Loaded volumes shapes - 1.5T: {low_field_volume.shape}, 3T: {high_field_volume.shape}")
+    return low_field_volume, high_field_volume
+
+def visualize_sample_slices(input_vol, generated_vol, target_vol=None, num_samples=3):
+    """Visualize sample slices from the volumes"""
+    total_slices = input_vol.shape[0]
+    # Choose evenly spaced slice indices
+    indices = np.linspace(10, total_slices-10, num_samples, dtype=int)
+    
+    if target_vol is not None:
+        fig, axes = plt.subplots(3, num_samples, figsize=(15, 8))
+        plt.suptitle('Sample Slices Comparison')
+    else:
+        fig, axes = plt.subplots(2, num_samples, figsize=(15, 6))
+        plt.suptitle('Input vs Generated Slices')
+    
+    for i, idx in enumerate(indices):
+        # Input slice
+        axes[0, i].imshow(input_vol[idx], cmap='gray')
+        axes[0, i].set_title(f'1.5T Slice {idx}')
+        axes[0, i].axis('off')
+        
+        # Generated slice
+        axes[1, i].imshow(generated_vol[idx], cmap='gray')
+        axes[1, i].set_title(f'Generated 3T Slice {idx}')
+        axes[1, i].axis('off')
+        
+        # Target slice (if provided)
+        if target_vol is not None:
+            axes[2, i].imshow(target_vol[idx], cmap='gray')
+            axes[2, i].set_title(f'Target 3T Slice {idx}')
+            axes[2, i].axis('off')
+    
+    plt.tight_layout()
+    plt.show()
+
+def test_model():
+    print("Starting test with multiple slices...")
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
     
     try:
-        # Load images
-        print("Loading MRI images...")
-        
-        low_field_path = "IXI425-IOP-0988-SAGFSPGR_-sIXI42_-0003-00001-000001-01.nii"
-        high_field_path = "IXI519-HH-2240-MADisoTFE1_-s3T219_-0301-00003-000001-01.nii"
-
-        low_field = load_and_preprocess_nii(low_field_path)
-        high_field = load_and_preprocess_nii(high_field_path)
+        # Load data
+        base_path = "."  # Current directory
+        low_field_vol, high_field_vol = preprocess_volumes(base_path)
         
         # Convert to torch tensors
-        low_field_tensor = torch.from_numpy(low_field).float().unsqueeze(0).unsqueeze(0).to(device)
-        high_field_tensor = torch.from_numpy(high_field).float().unsqueeze(0).unsqueeze(0).to(device)
+        low_field_tensor = torch.from_numpy(low_field_vol).unsqueeze(1).to(device)  # [150, 1, 128, 128]
+        high_field_tensor = torch.from_numpy(high_field_vol).unsqueeze(1).to(device)
         
         # Initialize model
-        print("Initializing model...")
         model = MRICycleFreeGAN(device=device)
         
-        print("\nTesting model components:")
-        
-        # Test generator forward pass (1.5T -> 3T)
-        print("1. Testing 1.5T to 3T conversion...")
+        print("\nTesting conversion...")
         with torch.no_grad():
-            generated_3t = model.generator(low_field_tensor)
-        print(f"   Output shape: {generated_3t.shape}")
+            # Process in smaller batches to save memory
+            batch_size = 10
+            generated_slices = []
+            
+            for i in range(0, low_field_tensor.size(0), batch_size):
+                batch = low_field_tensor[i:i+batch_size]
+                generated_batch = model.generator(batch)
+                generated_slices.append(generated_batch.cpu())
+            
+            generated_vol = torch.cat(generated_slices, dim=0)
         
-        clear_gpu_memory()
+        # Convert back to numpy for visualization
+        input_vol = low_field_tensor.cpu().squeeze().numpy()
+        generated_vol = generated_vol.squeeze().numpy()
+        target_vol = high_field_tensor.cpu().squeeze().numpy()
         
-        # Test generator inverse (3T -> 1.5T)
-        print("2. Testing 3T to 1.5T conversion...")
-        with torch.no_grad():
-            generated_1_5t = model.generator.inverse(high_field_tensor)
-        print(f"   Output shape: {generated_1_5t.shape}")
+        # Visualize sample slices
+        print("\nVisualizing sample slices...")
+        visualize_sample_slices(input_vol, generated_vol, target_vol, num_samples=3)
         
-        clear_gpu_memory()
-        
-        # Move tensors to CPU for visualization
-        low_field_tensor = low_field_tensor.cpu()
-        high_field_tensor = high_field_tensor.cpu()
-        generated_3t = generated_3t.cpu()
-        generated_1_5t = generated_1_5t.cpu()
-        
-        # Visualize results
-        print("\nGenerating visualizations...")
-        fig, axes = plt.subplots(2, 2, figsize=(12, 12))
-        fig.suptitle('MRI Conversion Results')
-        
-        # First row: 1.5T -> 3T
-        axes[0,0].imshow(low_field_tensor[0,0].numpy(), cmap='gray')
-        axes[0,0].set_title('Input (1.5T)')
-        axes[0,0].axis('off')
-        
-        axes[0,1].imshow(generated_3t[0,0].detach().numpy(), cmap='gray')
-        axes[0,1].set_title('Generated (3T)')
-        axes[0,1].axis('off')
-        
-        # Second row: 3T -> 1.5T
-        axes[1,0].imshow(high_field_tensor[0,0].numpy(), cmap='gray')
-        axes[1,0].set_title('Input (3T)')
-        axes[1,0].axis('off')
-        
-        axes[1,1].imshow(generated_1_5t[0,0].detach().numpy(), cmap='gray')
-        axes[1,1].set_title('Generated (1.5T)')
-        axes[1,1].axis('off')
-        
-        plt.tight_layout()
-        plt.show()
-        
-        print("\nTest completed successfully!")
-        return True
+        print("Test completed successfully!")
+        return model
         
     except Exception as e:
         print(f"\nError during testing: {str(e)}")
         import traceback
         traceback.print_exc()
-        return False
-    finally:
-        clear_gpu_memory()
+        return None
 
 if __name__ == "__main__":
-    test_with_real_images()
+    model = test_model()

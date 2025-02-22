@@ -14,74 +14,56 @@ class SpectralNormConv2d(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class MRIInvertibleBlock(nn.Module):
-    def __init__(self, channels):
+class MRIInvertibleGenerator(nn.Module):
+    def __init__(self, in_channels=1, num_blocks=4):
         super().__init__()
         
-        # Invertible 1x1 convolution with spectral normalization
-        self.conv1x1 = SpectralNormConv2d(channels, channels, 1, 1, 0)
-        # Initialize as identity matrix
-        self.conv1x1.conv.weight.data = torch.eye(channels).reshape(channels, channels, 1, 1)
-        
-        # Enhanced coupling networks for MRI features
-        self.net1 = nn.Sequential(
-            SpectralNormConv2d(channels//2, 256, 3, 1, 1),
-            nn.InstanceNorm2d(256),
+        # Reduced number of features for memory efficiency
+        self.initial_conv = nn.Sequential(
+            SpectralNormConv2d(in_channels, 16, 3, 1, 1),
+            nn.InstanceNorm2d(16),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout2d(0.1),
-            SpectralNormConv2d(256, 256, 3, 1, 1),
-            nn.InstanceNorm2d(256),
-            nn.LeakyReLU(0.2, inplace=True),
-            SpectralNormConv2d(256, channels//2, 3, 1, 1)
+            SpectralNormConv2d(16, 32, 3, 1, 1)
         )
         
-        self.net2 = nn.Sequential(
-            SpectralNormConv2d(channels//2, 256, 3, 1, 1),
-            nn.InstanceNorm2d(256),
+        # Main processing blocks with reduced channels
+        self.blocks = nn.ModuleList([MRIInvertibleBlock(32) for _ in range(num_blocks)])
+        
+        # Contrast modulation with reduced channels
+        self.contrast_mod = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(32, 32, 1),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Dropout2d(0.1),
-            SpectralNormConv2d(256, 256, 3, 1, 1),
-            nn.InstanceNorm2d(256),
+            nn.Conv2d(32, 32, 1),
+            nn.Sigmoid()
+        )
+        
+        self.final_conv = nn.Sequential(
+            SpectralNormConv2d(32, 16, 3, 1, 1),
+            nn.InstanceNorm2d(16),
             nn.LeakyReLU(0.2, inplace=True),
-            SpectralNormConv2d(256, channels//2, 3, 1, 1)
+            SpectralNormConv2d(16, in_channels, 3, 1, 1)
         )
 
     def forward(self, x):
-        # 1x1 convolution
-        x = self.conv1x1(x)
+        features = self.initial_conv(x)
         
-        # Split channels
-        x1, x2 = torch.chunk(x, 2, dim=1)
-        
-        # Coupling layers
-        y1 = x1 + self.net1(x2)
-        y2 = x2 + self.net2(y1)
-        
-        return torch.cat([y1, y2], dim=1)
+        for block in self.blocks:
+            features = block(features)
+            scale = self.contrast_mod(features)
+            features = features * scale
+            
+        return self.final_conv(features)
 
     def inverse(self, y):
-        # Handle batched input properly
-        batch_size = y.size(0)
-        height = y.size(2)
-        width = y.size(3)
+        features = self.initial_conv(y)
         
-        # Split channels
-        y1, y2 = torch.chunk(y, 2, dim=1)
-        
-        # Inverse coupling layers
-        x2 = y2 - self.net2(y1)
-        x1 = y1 - self.net1(x2)
-        
-        # Concatenate channels
-        x = torch.cat([x1, x2], dim=1)
-        
-        # Inverse 1x1 convolution
-        weight_inverse = self.conv1x1.conv.weight.squeeze().inverse()
-        x_reshaped = x.permute(0, 2, 3, 1)  # [B, H, W, C]
-        x_reshaped = x_reshaped @ weight_inverse  # Matrix multiplication
-        x = x_reshaped.permute(0, 3, 1, 2)  # [B, C, H, W]
-        
-        return x
+        for block in reversed(self.blocks):
+            scale = self.contrast_mod(features)
+            features = features / (scale + 1e-6)
+            features = block.inverse(features)
+            
+        return self.final_conv(features)
 
 class MRIInvertibleGenerator(nn.Module):
     def __init__(self, in_channels=1, num_blocks=6):
