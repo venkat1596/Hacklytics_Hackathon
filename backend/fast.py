@@ -10,6 +10,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def ProcessImage():
+    # FOR TESTING PURPOSES ONLY
+    return "test.jpg"
+
+
 app = FastAPI()
 
 @app.get("/")
