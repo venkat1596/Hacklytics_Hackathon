@@ -1,6 +1,10 @@
-from fastapi import FastAPI
-from fastapi import File, UploadFile, FileResponse
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import shutil
+import os
+
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -10,19 +14,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def ProcessImage():
-    # FOR TESTING PURPOSES ONLY
-    return "test.jpg"
-
-
-app = FastAPI()
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure upload folder exists
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-
-@app.get("/send-and-rec")
+@app.post("/send-and-rec")
 async def send_and_rec(image: UploadFile = File(...)):
+    file_path = f"{UPLOAD_FOLDER}/{image.filename}"
     
-    return {FileResponse(ProcessImage(image))}
+    # Save the uploaded image
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    return {"filename": image.filename, "message": "Upload successful"}

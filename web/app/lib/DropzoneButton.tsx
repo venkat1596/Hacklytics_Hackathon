@@ -9,11 +9,32 @@ export function DropzoneButton() {
   const theme = useMantineTheme();
   const openRef = useRef<() => void>(null);
 
+  // Function to handle file upload
+  const handleDrop = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    const file = files[0]; // Only take the first file
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("http://localhost:8000/send-and-rec", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      console.log("Upload Success:", result);
+    } catch (error) {
+      console.error("Upload Error:", error);
+    }
+  };
+
   return (
     <div className={classes.wrapper}>
       <Dropzone
         openRef={openRef}
-        onDrop={() => {}}
+        onDrop={handleDrop}  // Updated to send the file
         className={classes.dropzone}
         radius="md"
         accept={["image/jpeg"]}
