@@ -33,13 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         <MantineProvider theme={theme}>
           <ColorSchemeScript />
-          {children}
-          <HeaderSimple />
-          <HeroBullets />
-          <FooterCentered />
+          {children} {/* Main content will be displayed here based on the current route */}
         </MantineProvider>
       </body>
     </html>

@@ -1,8 +1,8 @@
 .inner {
     display: flex;
     justify-content: space-between;
-    padding-top: calc(var(--mantine-spacing-xl) * 2); /* Reduced from 4 to 2 */
-    padding-bottom: calc(var(--mantine-spacing-xl) * 2); /* Reduced from 4 to 2 */
+    padding-top: calc(var(--mantine-spacing-xl) * 5); /* Reduced from 4 to 2 */
+    padding-bottom: calc(var(--mantine-spacing-xl) * 5); /* Reduced from 4 to 2 */
 }
 
 .content {
