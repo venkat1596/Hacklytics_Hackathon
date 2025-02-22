@@ -1,2 +1,3 @@
 from .generator import Unet
-from .discriminator import Discriminator
+from .discriminator import PatchDisc
+from .cyclegan_trainer import CycleGan
