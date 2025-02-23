@@ -11,9 +11,9 @@ const DrawIOEmbed: React.FC<DrawIOEmbedProps> = ({
   width = '100%',
   height = '800px',
 }) => {
-  // Use provided URL or default Draw.io editor URL
+  // Construct the Draw.io viewer URL
   const drawIoUrl = diagramUrl
-    ? `https://viewer.diagrams.net/?lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1&title=Mirai.drawio&transparent=1&dark=0#U${encodeURIComponent(
+    ? `https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1&title=Mirai.drawio&dark=auto#U${encodeURIComponent(
         diagramUrl
       )}`
     : 'https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json';

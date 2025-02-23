@@ -11,7 +11,7 @@ export default function WorkflowPage() {
         <main>
           <Banner />
           <DrawIOEmbed
-            diagramUrl="https://drive.google.com/uc?id=1YFyaU1u77IHD1L--fzi62jCuSMbTR-1T&export=download"
+            diagramUrl="https://drive.google.com/uc?id=1M-iW6nt1wAC8jlOhwZTF4CkuQu937ie8&export=download"
             width="100%"
             height="800px"
           />
