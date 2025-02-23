@@ -8,7 +8,7 @@ export function HeroText() {
         <Title className={classes.title}>
           High Quality{' '}
           <Text component="span" className={classes.highlight} inherit>
-            CAT Scan
+            MRI Scan
           </Text>{' '}
           for any Machine
         </Title>
@@ -21,10 +21,26 @@ export function HeroText() {
         </Container>
 
         <div className={classes.controls}>
-          <Button className={classes.control} size="lg" variant="default" color="gray">
+          <Button
+            className={classes.control}
+            size="lg"
+            variant="default"
+            color="gray"
+            component="a"
+            href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Demo Video
           </Button>
-          <Button className={classes.control} size="lg">
+          <Button
+            className={classes.control}
+            size="lg"
+            component="a"
+            href="https://docs.google.com/document/d/your-doc-id/edit"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Documentation
           </Button>
         </div>
