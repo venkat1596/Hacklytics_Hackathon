@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from models import CycleMRIGAN
+from model import CycleMRIGAN
 from data import MRIDataModule2D
 
 
