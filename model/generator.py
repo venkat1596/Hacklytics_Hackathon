@@ -169,6 +169,168 @@ class Unet(nn.Module):
         for param in self.parameters():
             param.requires_grad = requires_grad
 
+class SpectralNormConv3d(nn.Module):
+    """Convolution layer with spectral normalization for stability"""
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, use_act=True):
+        super().__init__()
+        self.conv = nn.utils.spectral_norm(
+            nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding)
+        )
+        if use_act:
+            self.act = Smish()
+        self.use_act = use_act
+
+    def forward(self, x):
+        x = self.conv(x)
+        if self.use_act:
+            x = self.act(x)
+        return x
+
+
+class DoubleSpectralNormConv2d(nn.Module):
+    def __init__(self, in_channels, mid_channels, out_channels, kernel_size, stride=1, padding=0):
+        super().__init__()
+        self.conv1 = SpectralNormConv3d(in_channels, mid_channels, kernel_size, stride, padding, use_act=True)
+        self.conv2 = SpectralNormConv3d(mid_channels, out_channels, kernel_size, stride, padding, use_act=True)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        return x
+
+
+class Simple3DSAFM(nn.Module):
+    def __init__(self, dim, ratio=4):
+        super().__init__()
+        self.dim = dim
+        self.chunk_dim = dim // ratio
+
+        # 3D adaptations of SAFM components
+        self.proj = nn.Conv3d(dim, dim, 3, 1, 1, bias=False)
+        self.dwconv = nn.Conv3d(self.chunk_dim, self.chunk_dim, 3, 1, 1,
+                                groups=self.chunk_dim, bias=False)
+        self.out = nn.Conv3d(dim, dim, 1, 1, 0, bias=False)
+        self.act = Smish()
+
+    def forward(self, x):
+        d, h, w = x.size()[-3:]
+        x0, x1 = self.proj(x).split([self.chunk_dim, self.dim - self.chunk_dim], dim=1)
+
+        # 3D adaptive pooling and upsampling
+        x2 = F.adaptive_max_pool3d(x0, (d // 2, h // 4, w // 4))
+        x2 = self.dwconv(x2)
+        x2 = F.interpolate(x2, size=(d, h, w), mode='trilinear')
+        x2 = self.act(x2) * x0
+
+        x = torch.cat([x1, x2], dim=1)
+        x = self.out(self.act(x))
+        return x
+
+
+class CCM3D(nn.Module):
+    def __init__(self, dim, ffn_scale=2.0):
+        super().__init__()
+        hidden_dim = int(dim * ffn_scale)
+        self.conv1 = nn.Conv3d(dim, hidden_dim, 3, 1, 1, bias=False)
+        self.conv2 = nn.Conv3d(hidden_dim, dim, 1, 1, 0, bias=False)
+        self.act = Smish()
+
+    def forward(self, x):
+        return self.conv2(self.act(self.conv1(x)))
+
+
+class InvertibleAttBlock3D(nn.Module):
+    def __init__(self, dim, ffn_scale=2.0):
+        super().__init__()
+        self.norm = nn.InstanceNorm3d(dim)
+        self.safm = Simple3DSAFM(dim, ratio=4)
+        self.ccm = CCM3D(dim, ffn_scale)
+
+        # Invertibility components
+        self.conv_residual = nn.Conv3d(dim, dim, 1, 1, 0, bias=False)
+        self.scale = nn.Parameter(torch.ones(1))
+        self.act = Smish()
+
+    def forward(self, x):
+        identity = x
+        out = self.norm(x)
+        out = self.safm(out)
+        out = self.ccm(out)
+        return identity + self.scale * self.act(out)
+
+    def inverse(self, y):
+        return (y - self.scale * self.act(self.ccm(self.safm(self.norm(y)))))
+
+
+class EfficientInvertibleGenerator3D(nn.Module):
+    def __init__(self, in_channels=1, dim=64, n_blocks=8, ffn_scale=2.0):
+        super().__init__()
+
+        # Initial feature extraction
+        self.to_feat = nn.Sequential(
+            nn.Conv3d(in_channels, dim, 3, 1, 1, bias=False),
+            nn.InstanceNorm3d(dim),
+            Smish()
+        )
+
+        # Main processing blocks
+        self.blocks = nn.ModuleList([
+            InvertibleAttBlock3D(dim, ffn_scale)
+            for _ in range(n_blocks)
+        ])
+
+        # Attention mechanism
+        self.attention = nn.Sequential(
+            nn.Conv3d(dim, dim // 2, 1),
+            Smish(),
+            nn.Conv3d(dim // 2, dim, 1),
+            nn.Sigmoid()
+        )
+
+        # Output projection
+        self.to_out = nn.Sequential(
+            nn.Conv3d(dim, in_channels, 3, 1, 1, bias=False),
+            nn.Tanh()
+        )
+
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+
+    def forward(self, x):
+        # Feature extraction
+        feat = self.to_feat(x)
+
+        # Process through invertible blocks
+        for block in self.blocks:
+            feat = block(feat)
+
+        # Apply attention
+        att = self.attention(feat)
+        feat = feat * att
+
+        # Output projection
+        return self.to_out(feat)
+
+    def inverse(self, y):
+        # Remove output projection
+        feat = self.to_feat(y)
+
+        # Remove attention effect approximately
+        att = self.attention(feat)
+        feat = feat / (att + 1e-6)  # Add small epsilon to prevent division by zero
+
+        # Inverse through blocks in reverse order
+        for block in reversed(self.blocks):
+            feat = block.inverse(feat)
+
+        return self.to_out(feat)
+
 
 
 

@@ -1,7 +1,7 @@
 .header {
     height: 56px;
     margin-bottom: 0px; /* Reduced from 120px to 60px */
-    background-color: var(--mantine-color-body);
+    background-color: grey; /* Change background color to grey */
     border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
 }
 

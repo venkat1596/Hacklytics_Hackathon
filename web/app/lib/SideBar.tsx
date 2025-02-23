@@ -18,7 +18,7 @@ import classes from './NavbarSimpleColored.module.css';
 const data = [
   { link: '/', label: 'Overview', icon: IconBellRinging },
   { link: '/application', label: 'Application', icon: IconDatabaseImport },
-  { link: '/resources', label: 'Resources', icon: IconReceipt2 }, // Add route for Resources
+  { link: '/resources', label: 'Documentation', icon: IconReceipt2 }, // Add route for Resources
   { link: 'https://github.com/venkat1596/Hacklytics_Hackathon', label: 'Repository', icon: IconFingerprint },
   { link: 'https://hacklytics2025.devpost.com/?preview_token=1Eh9XQPZDc5KLXKykrn1G2vf%2FlgAeiq5c6m0VfYN9i8%3D', label: 'DevPost', icon: IconKey },
 ];
@@ -68,7 +68,7 @@ export function NavbarSimpleColored() {
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
           <Code fw={700} className={classes.version}>
-            v3.01.01
+            MIR.AI
           </Code>
         </Group>
         {links}

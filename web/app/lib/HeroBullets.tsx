@@ -1,4 +1,5 @@
-import { Button, Container, Group, Image, List, ListItem, Text, ThemeIcon, Title } from '@mantine/core';
+import { Button, Container, Group, Image, List, ListItem, Text, Title } from '@mantine/core';
+import Link from 'next/link'; // Import Link from next/link
 import classes from './HeroBullets.module.css';
 
 export function HeroBullets() {
@@ -7,35 +8,53 @@ export function HeroBullets() {
       <div className={classes.inner}>
         <div className={classes.content}>
           <Title className={classes.title}>
-            Transforming <span className={classes.highlight}>Healthcare</span> with AI-Driven <br /> MRI Super-Resolution
+            Enhancing <span className={classes.highlight}>Healthcare</span> through AI-Driven <br /> MRI Technology Upgrade
           </Title>
           <Text c="dimmed" mt="md">
-            Revolutionize brain pathology diagnosis with advanced MRI super-resolution technology. Our deep learning-powered solution enhances image quality, reduces scanning time, and lowers costs for better patient outcomes.
+            Unlock the potential of advanced MRI systems with our AI-powered solutions that facilitate the transition from 1.5T to 3T. Experience superior image quality, reduced scanning times, and lower operational costs, leading to improved patient outcomes and diagnostic accuracy.
           </Text>
 
           <List mt={30} spacing="sm" size="sm">
             <ListItem>
-              <b>Deep Learning-Powered</b> – Leverages RFB-ESRGAN and nESRGAN networks for superior texture and frequency restoration in MRI images.
+              <b>Superior Image Quality</b> – AI algorithms enhance image clarity and detail, enabling precise diagnoses with high-resolution imaging.
             </ListItem>
             <ListItem>
-              <b>Efficient and Cost-Effective</b> – Achieves high-resolution 3D reconstruction with reduced computational costs compared to traditional methods.
+              <b>Increased Efficiency</b> – Streamlined workflows and automated processes reduce scanning times, allowing healthcare providers to serve more patients efficiently.
             </ListItem>
             <ListItem>
-              <b>Innovative Noise Integration</b> – Uses noise-based super-resolution to restore high-frequency details and improve visual clarity.
+              <b>Predictive Analytics</b> – Leverage AI to analyze vast datasets for informed decision-making and personalized patient care, improving overall treatment outcomes.
             </ListItem>
           </List>
 
           <Group mt={30}>
-            <Button radius="xl" size="md" className={classes.control}>
-              Learn More
-            </Button>
-            <Button variant="default" radius="xl" size="md" className={classes.control}>
-              Request a Demo
-            </Button>
+            {/* Features Button with Link */}
+            <Link href="/about" passHref legacyBehavior>
+              <Button
+                component="a" // Render the button as an anchor tag
+                radius="xl"
+                size="md"
+                className={classes.control}
+              >
+                Features
+              </Button>
+            </Link>
+
+            {/* Demo Video Button with Link */}
+            <Link href="/demo-video" passHref legacyBehavior>
+              <Button
+                component="a" // Render the button as an anchor tag
+                variant="default"
+                radius="xl"
+                size="md"
+                className={classes.control}
+              >
+                Demo Video
+              </Button>
+            </Link>
           </Group>
         </div>
         {/* ✅ Kept the same image as before */}
-        <Image src="/image.png" alt="AI-Powered MRI Super-Resolution" className={classes.image} />
+        <Image src="/image.png" alt="AI-Driven MRI Technology Upgrade" className={classes.image} />
       </div>
     </Container>
   );

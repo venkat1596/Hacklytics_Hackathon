@@ -22,13 +22,15 @@ export function HeroText() {
 
         <div className={classes.controls}>
           <Button className={classes.control} size="lg" variant="default" color="gray">
-            Book a demo
+            Demo Video
           </Button>
           <Button className={classes.control} size="lg">
-            Purchase a license
+            Documentation
           </Button>
         </div>
       </div>
     </Container>
   );
 }
+
+export default HeroText;

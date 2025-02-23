@@ -29,47 +29,66 @@ class Downsample(nn.Module):
         x = self.conv(self.pad(x))
         return x
 
-class PatchDisc(nn.Module):
-    def __init__(self, in_channels, features):
+
+class PatchDiscriminator(nn.Module):
+    def __init__(self, in_channels=1, features=16):
         super().__init__()
+        self.initial = nn.Sequential(
+            nn.Conv2d(in_channels, features, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
 
-        # block 1
-        self.conv1 = ConvModule(in_channels, features)
-        self.down1 = Downsample(features)
-
-        # block 2
-        self.conv2 = ConvModule(features, features*2)
-        self.down2 = Downsample(features*2)
-
-        # block 3
-        self.conv3 = ConvModule(features*2, features*4)
-        self.down3 = Downsample(features*4)
-
-        # block 4
-        self.conv4 = ConvModule(features*4, features*4)
-        self.down4 = Downsample(features*4)
-
-
-        self.final_conv = nn.Conv3d(features*4, features, kernel_size=4, stride=1, padding=1)
+        self.model = nn.Sequential(
+            ConvModule(features, features * 2),
+            Downsample(features * 2),
+            ConvModule(features * 2, features * 4),
+            Downsample(features * 4),
+            ConvModule(features * 4, features * 4),
+            nn.Conv2d(features * 4, 1, kernel_size=4, stride=1, padding=1)
+        )
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.down1(x)
+        x = self.initial(x)
+        return self.model(x)
 
-        x = self.conv2(x)
-        x = self.down2(x)
 
-        x = self.conv3(x)
-        x = self.down3(x)
 
-        x = self.conv4(x)
-        x = self.down4(x)
+class SpectralNormConv3d(nn.Module):
+    """Convolution layer with spectral normalization for stability"""
 
-        x = self.final_conv(x)
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, use_act=True):
+        super().__init__()
+        self.conv = nn.utils.spectral_norm(
+                nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding)
+            )
+        if use_act:
+            self.act = Smish()
+        self.use_act = use_act
+
+    def forward(self, x):
+        x = self.conv(x)
+        if self.use_act:
+            x = self.act(x)
         return x
 
-    def set_requires_grad(self, requires_grad=False):
-        for param in self.parameters():
-            param.requires_grad = requires_grad
+class Spectral_Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv_blocks = nn.Sequential(
+            SpectralNormConv3d(1, 32, 4, stride=2, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
 
+            SpectralNormConv3d(32, 64, 4, stride=2, padding=1),
+            nn.InstanceNorm3d(64),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            SpectralNormConv3d(64, 128, 4, stride=2, padding=1),
+            nn.InstanceNorm3d(128),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            SpectralNormConv3d(128, 1, 4, padding=1)
+        )
+
+    def forward(self, x):
+        return self.conv_blocks(x)
 
