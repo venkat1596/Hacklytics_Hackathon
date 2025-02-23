@@ -89,16 +89,19 @@ export function DropzoneButton() {
         {loading ? 
           <RingProgress
             sections={[
-              { value: 60, color: 'cyan' },
-              { value: 20, color: 'pink' }
+              { value: 50, color: 'cyan' },
+              { value: 25, color: 'pink' },
+              { value: 20, color: '#EDE3FF' },
+              { value: 10, color: 'grey' },
             ]}
+            mb="5%"
           /> : null
         }
       </Center>
 
      {/* 2-Grid Display for Input and Output Images */}
 {(!loading && (inputImage || upScaled) && (show)) ? 
-  <Grid mt="md" gutter="md">
+  <Grid mt="md" gutter="md" style={{padding: '5%'}}>
     <Grid.Col span={6}>
       <Box style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '8px' }}>
         <Text ta="center" fw={500} mb="sm">Input Image</Text>
@@ -138,7 +141,7 @@ export function DropzoneButton() {
         size="md"
         radius="xl"
         onClick={() => ChangeShow((show + 1) % 2)}
-        mt="10px" // Set the margin-top to 30 pixels
+        mt="5%" // Set the margin-top to 30 pixels
         >
         Toggle Result
       </Button>
