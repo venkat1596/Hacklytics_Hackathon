@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
+import torch
 import os
 
 app = FastAPI()
@@ -16,7 +17,7 @@ app.add_middleware(
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure upload folder exists
-
+#model = Model()
 def ProcessFile(image):
     pass        # Going to call the file image proccess
 
