@@ -1,15 +1,14 @@
-<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimg.freepik.com%2Fpremium-photo%2Fabstract-human-brain-banner-generative-ai-illustration_145713-3075.jpg&f=1&nofb=1&ipt=d4a9b08cdf5acc91ef2caf0e89c483691c4ae23fe1dd090eb46fcb4368a89b17&ipo=images" width="100%" height="180" />
+![Logo](/web/public/Logo.png)
 
-# AI-Driven MRI Upgrade Project
+# AI-Driven Efficient MRI Super-Resolution
 
 ## Overview
 
 This project aims to revolutionize MRI imaging technology by leveraging advanced AI techniques to enhance image quality, reduce scanning times, and lower costs. By upgrading MRI systems from 1.5T to 3T, we strive to improve diagnostic accuracy and patient outcomes in healthcare settings.
 
-## Welcome to Our Project!
+## 🌟 Inspiration
 
-### Our Motivation
-MRI scans are expensive, and high-quality 3T models are even more so. Our goal here is a proof of concept to show that Artificial Intelligence-based image processing can increase access without the need for expensive technology. We believe this will increase access, especially for third-world countries where even keeping the lights on is a budgetary issue.
+MRI scans are inherently expensive, and high-quality **3T models** escalate costs even further, creating significant barriers to access in many regions. Our goal was to leverage **AI-driven image processing** to enhance accessibility, particularly in **resource-limited settings**, making advanced medical imaging more **affordable** and **widely available** to improve **patient outcomes** and **diagnostic capabilities**.
 
 ## Features
 
@@ -17,6 +16,19 @@ MRI scans are expensive, and high-quality 3T models are even more so. Our goal h
 - **Efficient Image Processing:** A dedicated backend for handling image data, ensuring quick and reliable processing.
 - **User-Friendly Frontend:** An intuitive UI that integrates seamlessly with backend services for enhanced user experience.
 - **ML Parameter Testing:** Rigorous testing to optimize the machine learning model's performance.
+
+## ⚠️ Challenges We Ran Into
+
+We faced several challenges, including:
+
+- **Lack of pair images** 🏥  
+  We didn't have a pair of images to validate the generated images against.
+
+- **Managing computational demands** 💻  
+  Optimizing our model to efficiently leverage available resources.  
+
+- **Balancing realism and medical accuracy** 🏥  
+  Ensuring the generated images are **clinically useful** for diagnosis.  
 
 ## Team
 
@@ -43,19 +55,22 @@ Our AI-driven solution benefits various stakeholders in the healthcare industry:
 
 ## Details
 
-### Demo Video
-[Insert link to demo video here]
+🚀 **Tech Stack:**  
+🟢 **Framework:** Python, PyTorch Lightning, plotlib   
+🟢 **Techniques Used:** Contrastive Unpaired Translation
 
-### Installation/Run Reminders
+## Demo Video
+- Link  to a working demo of our project. [MRI_Video](https://www.youtube.com/watch?v=W0isckv7zg4)
+
+
+## Installation/Run Reminders
 - To run the frontend, enter the `web` directory and use:
   ```bash
   npm install
 - To run the backend
- ```bash
-  pip install -r requirements.txt`
-
-
-# References:
+  ```bash
+  pip install -r requirements.txt
+## References:
 These Projects and Papers were used as references for this project:
 - https://github.com/wilbertcaine/CUT
 - https://github.com/xavysp/TEED
@@ -63,5 +78,5 @@ These Projects and Papers were used as references for this project:
 - https://ieeexplore.ieee.org/document/9622180
 - https://github.com/taesungp/contrastive-unpaired-translation/tree/master
 
-# Dataset
-- We Downloaded the Dataset From: http://brain-development.org/ixi-dataset/
+## Dataset
+- Dataset for this usecase was obtained from: [MRI_Dataset](http://brain-development.org/ixi-dataset/)
