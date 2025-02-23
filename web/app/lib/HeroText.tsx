@@ -6,17 +6,17 @@ export function HeroText() {
     <Container className={classes.wrapper} size={1400}>
       <div className={classes.inner}>
         <Title className={classes.title}>
-          Automated AI{' '}
+          High Quality{' '}
           <Text component="span" className={classes.highlight} inherit>
-            code reviews
+            CAT Scan
           </Text>{' '}
-          for any stack
+          for any Machine
         </Title>
 
         <Container p={0} size={600}>
           <Text size="lg" c="dimmed" className={classes.description}>
-            Build more reliable software with AI companion. AI is also trained to detect lazy
-            developers who do nothing and just complain on Twitter.
+            Upload an image of the lower-quality scan you would like to upscale.
+            Then see the magic in action!
           </Text>
         </Container>
 

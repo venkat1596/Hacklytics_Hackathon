@@ -1,7 +1,7 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { IconCloudUpload, IconDownload, IconX } from '@tabler/icons-react';
-import { Button, Group, Text, useMantineTheme } from '@mantine/core';
+import { Button, Group, Text, useMantineTheme, RingProgress } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import classes from './DropzoneButton.module.css';
 import axios from 'axios';
@@ -11,12 +11,17 @@ export function DropzoneButton() {
   const openRef = useRef<() => void>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
+  const [upScaled,setUpscaled] = useState<any>(null); 
+  const [loading, changelstate] = useState<number>(0);
+  const [show, ChangeShow] = useState<number>(1);
+
 
   // Function to handle file upload
   const handleDrop = async (files: File[]) => {
     console.log("Within Function");
     if (!files.length) return;
-  
+    while(loading);
+    changelstate(1)
     const file = files[0];
     const data = new FormData();
     data.append('image', file, file.name); // Wrap the file in FormData
@@ -28,12 +33,37 @@ export function DropzoneButton() {
           'Accept-Language': 'en-US,en;q=0.8',
           'Content-Type': 'multipart/form-data',
         },
+        responseType: 'blob'
       });
-  
+      const blob = new Blob([response.data], { type: 'image/jpeg' });
+      const imageUrl = URL.createObjectURL(blob);
+      setUpscaled(imageUrl);
+      console.log(imageUrl);
       console.log('Upload success:', response.data);
     } catch (error) {
       console.error('Upload failed:', error);
     }
+    changelstate(0)
+  };
+  const ImageLoaderWrapper = () =>
+  {
+    useEffect(() => {
+      ImageLoader()
+
+    }, [loading]) ;
+  }
+
+  const ImageLoader = () => {
+  
+    if (upScaled === null) {
+      return null;
+    }
+  
+    if (upScaled === 'loading') {
+      
+    }
+  
+    return <img src={upScaled} alt={"Result"} />;
   };
   
 
@@ -71,9 +101,20 @@ export function DropzoneButton() {
         </div>
       </Dropzone>
 
-      <Button className={classes.control} size="md" radius="xl" onClick={() => openRef.current?.()}>
-        Select files
+      <Button className={classes.control} size="md" radius="xl" onClick={() => ChangeShow((show + 1) % 2)}>
+        Toggle Result
       </Button>
+      
+      {loading ? (
+    <RingProgress 
+      sections={[
+        { value: 60, color: 'cyan' },
+        { value: 20, color: 'pink' }
+      ]} 
+    />
+      ) : upScaled !== null && show === 0? (
+     <img src={upScaled} alt="Result" />
+     ) : null}
     </div>
   );
 }
