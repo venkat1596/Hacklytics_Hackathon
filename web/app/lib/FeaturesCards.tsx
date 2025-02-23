@@ -7,35 +7,40 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { IconBrain, IconServer, IconLayoutDashboard, IconAdjustments } from '@tabler/icons-react';
 import classes from './FeaturesCards.module.css';
 
 const teamMembers = [
   {
-    name: 'Team Member 1',
+    name: 'Sumanth ',
     role: 'Machine Learning Developer',
     description: 'Developed the machine learning model that powers our AI-driven MRI solution.',
+    icon: IconBrain,
   },
   {
-    name: 'Team Member 2',
+    name: 'Jaskaran Singh Chawla',
     role: 'ML Backend Developer',
     description: 'Built the backend infrastructure for image processing, ensuring efficient data handling.',
+    icon: IconServer,
   },
   {
-    name: 'Team Member 3',
+    name: 'Aryan Bhatia',
     role: 'Frontend Developer',
     description: 'Created the frontend UI with seamless integration of backend services for optimal user experience.',
+    icon: IconLayoutDashboard,
   },
   {
-    name: 'Team Member 4',
+    name: 'Prashant Biyyani',
     role: 'ML Parameter Tester',
     description: 'Conducted extensive parameter testing to refine the machine learning models and enhance performance.',
+    icon: IconAdjustments,
   },
 ];
 
 export function FeaturesCards() {
   const members = teamMembers.map((member) => (
     <Card key={member.name} shadow="md" radius="md" className={classes.card} padding="xl">
-      <img src="/global.svg" alt={member.name} style={{ width: 50, height: 50 }} />
+      <member.icon size={50} stroke={1.5} />
       <Text fz="lg" fw={500} className={classes.cardTitle} mt="md">
         {member.name}
       </Text>

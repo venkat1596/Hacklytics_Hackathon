@@ -1,22 +1,27 @@
-import { Container, Image, SimpleGrid, Text, ThemeIcon, Title } from '@mantine/core';
+import { Container, SimpleGrid, Text, ThemeIcon, Title } from '@mantine/core';
+import { IconMicroscope, IconBuildingHospital, IconUserHeart, IconRobot } from '@tabler/icons-react'; // Import icons
 import classes from './FeaturesImages.module.css';
 
 const data = [
   {
     title: 'Radiologists',
     description: 'Experience enhanced image clarity and detail, leading to more accurate diagnoses and improved patient care.',
+    icon: <IconMicroscope size={30} />, // Icon for Radiologists
   },
   {
     title: 'Healthcare Administrators',
     description: 'Optimize operational efficiency with reduced scanning times and lower costs, maximizing resource allocation.',
+    icon: <IconBuildingHospital size={30} />, // Icon for Healthcare Administrators
   },
   {
     title: 'Patients',
     description: 'Benefit from quicker and more accurate diagnoses, leading to faster treatment plans and improved outcomes.',
+    icon: <IconUserHeart size={30} />, // Icon for Patients
   },
   {
     title: 'Technologists',
     description: 'Utilize advanced AI tools to streamline workflows and enhance the overall scanning process.',
+    icon: <IconRobot size={30} />, // Icon for Technologists
   },
 ];
 
@@ -24,7 +29,7 @@ export function FeaturesImages() {
   const items = data.map((item, index) => (
     <div className={classes.item} key={index}>
       <ThemeIcon variant="light" className={classes.itemIcon} size={60} radius="md">
-        <Image src={`${process.env.PUBLIC_URL}/globe.svg`} />
+        {item.icon} {/* Use the icon from the data object */}
       </ThemeIcon>
 
       <div>
