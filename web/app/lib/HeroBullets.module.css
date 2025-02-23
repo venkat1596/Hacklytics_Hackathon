@@ -34,8 +34,8 @@
 }
 
 .image {
-    width: 376px;
-    height: 356px;
+    width: 722px;
+    height: 682px;
 
     @media (max-width: 992px) { /* $mantine-breakpoint-md replaced */
       display: none;

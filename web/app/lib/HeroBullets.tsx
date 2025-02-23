@@ -54,7 +54,7 @@ export function HeroBullets() {
           </Group>
         </div>
         {/* ✅ Kept the same image as before */}
-        <Image src="/image.png" alt="AI-Driven MRI Technology Upgrade" className={classes.image} />
+        <Image src="/MRIImage.jpg" alt="AI-Driven MRI Technology Upgrade" className={classes.image} />
       </div>
     </Container>
   );
