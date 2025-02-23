@@ -7,6 +7,7 @@ import { DropzoneButton } from "../lib/DropzoneButton"; // Import DropzoneButton
 import { Banner
 
  } from "../lib/Banner";
+
 const ApplicationPage: React.FC = () => {
   return (
     <div className={styles.container}>
@@ -15,7 +16,8 @@ const ApplicationPage: React.FC = () => {
         <main>
           <Banner />
           <HeroText />
-          <DropzoneButton /> {/* Use DropzoneButton instead of Dropzone */}
+          <DropzoneButton/> {/* Use DropzoneButton instead of Dropzone */}
+        
         </main>
       </div>
     </div>

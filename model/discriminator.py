@@ -10,9 +10,9 @@ from .Xsmish import Smish
 class ConvModule(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3):
         super().__init__()
-        self.conv_first = nn.Conv3d(in_channels, out_channels, kernel_size=kernel_size,
+        self.conv_first = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
                                     padding=kernel_size//2)
-        self.first_norm = nn.InstanceNorm3d(out_channels)
+        self.first_norm = nn.InstanceNorm2d(out_channels)
         self.act = Smish()
 
     def forward(self, x):
@@ -22,8 +22,8 @@ class ConvModule(nn.Module):
 class Downsample(nn.Module):
     def __init__(self, features):
         super().__init__()
-        self.pad = nn.ReflectionPad3d(1)
-        self.conv = nn.Conv3d(features, features, kernel_size=3, stride=2)
+        self.pad = nn.ReflectionPad2d(1)
+        self.conv = nn.Conv2d(features, features, kernel_size=3, stride=2)
 
     def forward(self, x):
         x = self.conv(self.pad(x))
