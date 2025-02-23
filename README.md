@@ -53,3 +53,15 @@ Our AI-driven solution benefits various stakeholders in the healthcare industry:
 - To run the backend
  ```bash
   pip install -r requirements.txt`
+
+
+# References:
+These Projects and Papers were used as references for this project:
+- https://github.com/wilbertcaine/CUT
+- https://github.com/xavysp/TEED
+- https://arxiv.org/abs/1703.10593
+- https://ieeexplore.ieee.org/document/9622180
+- https://github.com/taesungp/contrastive-unpaired-translation/tree/master
+
+# Dataset
+- We Downloaded the Dataset From: http://brain-development.org/ixi-dataset/

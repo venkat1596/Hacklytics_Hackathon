@@ -236,34 +236,63 @@ class TED(nn.Module):
         data = data1[:, :, crop_h:crop_h + h, crop_w:crop_w + w]
         return data
 
+    def forward(self, x, layers=[], encode_only=False):
+        # Handle feature extraction mode
+        if len(layers) > 0:
+            feats = []
 
-    def forward(self, x, single_test=False):
-        assert x.ndim == 4, x.shape
-         # supose the image size is 352x352
+            # Block 1 - First feature level
+            block_1 = self.block_1(x)
+            if 0 in layers:
+                feats.append(block_1)
+            block_1_side = self.side_1(block_1)
 
-        # Block 1
-        block_1 = self.block_1(x) # [8,16,176,176]
-        block_1_side = self.side_1(block_1) # 16 [8,32,88,88]
+            # Block 2 - Second feature level
+            block_2 = self.block_2(block_1)
+            if 1 in layers:
+                feats.append(block_2)
+            block_2_down = self.maxpool(block_2)
+            block_2_add = block_2_down + block_1_side
 
-        # Block 2
-        block_2 = self.block_2(block_1) # 32 # [8,32,176,176]
-        block_2_down = self.maxpool(block_2) # [8,32,88,88]
-        block_2_add = block_2_down + block_1_side # [8,32,88,88]
+            # Block 3 - Third feature level
+            block_3_pre_dense = self.pre_dense_3(block_2_down)
+            block_3, _ = self.dblock_3([block_2_add, block_3_pre_dense])
+            if 2 in layers:
+                feats.append(block_3)
 
-        # Block 3
-        block_3_pre_dense = self.pre_dense_3(block_2_down) # [8,64,88,88] block 3 L connection
-        block_3, _ = self.dblock_3([block_2_add, block_3_pre_dense]) # [8,64,88,88]
+            # If encode_only, return just the features
+            if encode_only:
+                return feats
 
-        # upsampling blocks
-        out_1 = self.up_block_1(block_1)
-        out_2 = self.up_block_2(block_2)
-        out_3 = self.up_block_3(block_3)
+            # Otherwise, continue with normal forward pass
+            out_1 = self.up_block_1(block_1)
+            out_2 = self.up_block_2(block_2)
+            out_3 = self.up_block_3(block_3)
 
-        results = [out_1, out_2, out_3]
+            results = [out_1, out_2, out_3]
+            block_cat = torch.cat(results, dim=1)
+            output = self.block_cat(block_cat)
 
-        # concatenate multiscale outputs
-        block_cat = torch.cat(results, dim=1)  # Bx6xHxW
-        block_cat = self.block_cat(block_cat)  # Bx1xHxW DoubleFusion
+            # Return both final output and intermediate features
+            return output, feats
 
-        # results.append(block_cat)
-        return block_cat
+        else:
+            # Standard forward pass without feature extraction
+            block_1 = self.block_1(x)
+            block_1_side = self.side_1(block_1)
+
+            block_2 = self.block_2(block_1)
+            block_2_down = self.maxpool(block_2)
+            block_2_add = block_2_down + block_1_side
+
+            block_3_pre_dense = self.pre_dense_3(block_2_down)
+            block_3, _ = self.dblock_3([block_2_add, block_3_pre_dense])
+
+            out_1 = self.up_block_1(block_1)
+            out_2 = self.up_block_2(block_2)
+            out_3 = self.up_block_3(block_3)
+
+            results = [out_1, out_2, out_3]
+            block_cat = torch.cat(results, dim=1)
+            return self.block_cat(block_cat)
+
