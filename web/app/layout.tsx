@@ -7,9 +7,6 @@ import { HeaderSimple } from "./lib/HeaderSimple";
 import { HeroBullets } from "./lib/HeroBullets";
 import { FooterCentered } from "./lib/FooterCentered";
 
-const theme = createTheme({
-  // Define your theme settings if needed
-});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,8 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <MantineProvider theme={theme}>
-          <ColorSchemeScript />
+        <MantineProvider>
           {children} {/* Main content will be displayed here based on the current route */}
         </MantineProvider>
       </body>
