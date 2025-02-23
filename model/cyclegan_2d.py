@@ -28,6 +28,7 @@ class CycleMRIGAN(pl.LightningModule):
         # Loss weights
         self.lambda_cycle = 10.0
         self.lambda_identity = 5.0
+        self.automatic_optimization = False
 
     def adversarial_loss(self, y_hat, y):
         return torch.mean((y_hat - y) ** 2)
@@ -134,26 +135,26 @@ class CycleMRIGAN(pl.LightningModule):
         # Generator training phase
         self.toggle_optimizer(opt_g)
         g_loss_dict = self.generator_step(mri_img_1_5, mri_img_3)
-        self.manual_backward(g_loss_dict["total_loss"])
+        self.manual_backward(g_loss_dict["loss"])
         opt_g.step()
         opt_g.zero_grad()
         self.untoggle_optimizer(opt_g)
 
         # Log generator metrics
-        self.log("generator_total_loss", g_loss_dict["total_loss"], prog_bar=True)
-        self.log("generator_loss_G", g_loss_dict["loss_G"])
-        self.log("generator_cycle_loss", g_loss_dict["cycle_loss"])
-        self.log("generator_identity_loss", g_loss_dict["identity_loss"])
+        self.log("generator_total_loss", g_loss_dict["loss"], prog_bar=True, on_epoch=True)
+        self.log("generator_loss_G", g_loss_dict["g_loss"], prog_bar=True, on_epoch=True)
+        self.log("generator_cycle_loss", g_loss_dict["cycle_loss"], prog_bar=True, on_epoch=True)
+        self.log("generator_identity_loss", g_loss_dict["identity_loss"], prog_bar=True, on_epoch=True)
 
         # Discriminator training phase
         self.toggle_optimizer(opt_d)
         d_loss_dict = self.discriminator_step(mri_img_1_5, mri_img_3)
-        self.manual_backward(d_loss_dict["total_loss"])
+        self.manual_backward(d_loss_dict["loss"])
         opt_d.step()
         opt_d.zero_grad()
         self.untoggle_optimizer(opt_d)
 
-        self.log("discriminator_total_loss", d_loss_dict["total_loss"], prog_bar=True)
+        self.log("discriminator_total_loss", d_loss_dict["loss"], prog_bar=True, on_epoch=True)
 
     def on_train_epoch_end(self):
         # Log current learning rates
@@ -232,10 +233,10 @@ class CycleMRIGAN(pl.LightningModule):
         loss_dict = self.generator_step(mri_img_1_5, mri_img_3)
 
         # Log validation metrics
-        self.log("val_generator_total_loss", loss_dict["total_loss"])
-        self.log("val_generator_loss_G", loss_dict["loss_G"])
-        self.log("val_generator_cycle_loss", loss_dict["cycle_loss"])
-        self.log("val_generator_identity_loss", loss_dict["identity_loss"])
+        self.log("val_generator_total_loss", loss_dict["loss"], prog_bar=True, on_epoch=True)
+        self.log("val_generator_loss_G", loss_dict["g_loss"], prog_bar=True, on_epoch=True)
+        self.log("val_generator_cycle_loss", loss_dict["cycle_loss"], prog_bar=True, on_epoch=True)
+        self.log("val_generator_identity_loss", loss_dict["identity_loss"], prog_bar=True, on_epoch=True)
 
         # Visualize results periodically
         if self.global_step % 5 == 0:
@@ -248,4 +249,4 @@ class CycleMRIGAN(pl.LightningModule):
                 step=self.global_step
             )
 
-        return loss_dict["total_loss"]
+        return loss_dict["loss"]

@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-from . import Unet, PatchDisc
+from . import Unet
 
 class CycleGan(pl.LightningModule):
     def __init__(self, generator_config, discriminator_config):

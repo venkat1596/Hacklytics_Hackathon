@@ -19,8 +19,8 @@ def train_model(config):
         train_target_dir=config['data']['train_target_dir'],
         valid_source_dir=config['data']['valid_source_dir'],
         valid_target_dir=config['data']['valid_target_dir'],
-        stats_file=config['data']['stats_file'],
         batch_size=config['data']['batch_size'],
+        stats_file=config['data']['stats_file'],
         num_workers=config['data']['num_workers'],
         source_rotation_angle=config['augmentation']['source_rotation_angle'],
         source_translation=config['augmentation']['source_translation'],
@@ -56,11 +56,9 @@ def train_model(config):
         max_epochs=config['training']['max_epochs'],
         accelerator=config['training']['accelerator'],
         devices=config['training']['devices'],
-        strategy=config['training']['strategy'],
         callbacks=callbacks,
         logger=logger,
-        log_every_n_steps=config['training']['log_every_n_steps'],
-        val_check_interval=config['training']['val_check_interval']
+        log_every_n_steps=config['training']['log_every_n_steps']
     )
 
     # Train model

@@ -1,17 +1,16 @@
 # config.toml
 
-[paths]
-train_source_dir = "./data/ConstraintTest/trainA"  # Directory containing 1.5T images
-train_target_dir = "./data/ConstraintTest/trainB"  # Directory containing 3T images
-
-valid_source_dir = "./data/ConstraintTest/testA"  # Directory containing validation images
-valid_target_dir = "./data/ConstraintTest/testB"  # Directory containing test images
-
+[data]
+train_source_dir = "./Cao/models/mri_data/1.5T"  # Directory containing 1.5T images
+train_target_dir = "./Cao/models/mri_data/3T"  # Directory containing 3T images
 stats_file = "stats/dataset_stats.json"
-checkpoint_dir = "CycleGAN/checkpoints"
+valid_source_dir = "./Cao/models/mri_data/test_1.5T"  # Directory containing validation images
+valid_target_dir = "./Cao/models/mri_data/test_3T"  # Directory containing test images
 visualization_dir = "CycleGAN/visualizations"
+batch_size = 8
+num_workers = 8
 
-[datamodule]
+[augmentation]
 batch_size = 4
 num_workers = 8
 source_rotation_angle = 10.0
@@ -19,7 +18,7 @@ source_translation = 0.1
 target_rotation_angle = 5.0
 target_translation = 0.05
 
-[generator]
+[model]
 model = "TED"
 features = 32
 n_blocks = 4
@@ -36,10 +35,15 @@ features = 32
 min_lr = 1e-6
 lr = 1e-4
 
-[trainer]
+
+[training]
+seed=42
 max_epochs = 50
 accelerator = "gpu"
 devices = 1
 precision = '16-mixed'
 log_every_n_steps = 10
-check_val_every_n_epoch = 5
+val_check_interval = 5
+checkpoint_dir = "CycleGAN/checkpoints"
+log_dir = "./CycleGAN/Logs"
+experiment_name = "CycleGAN_MRI"
