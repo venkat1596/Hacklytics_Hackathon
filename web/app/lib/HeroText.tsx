@@ -6,17 +6,17 @@ export function HeroText() {
     <Container className={classes.wrapper} size={1400}>
       <div className={classes.inner}>
         <Title className={classes.title}>
-          Elevate <span className={classes.highlight}>MRI Imaging</span> with AI-Driven <br /> 
-          <Text component="span" inherit>
-            1.5T to 3T Upgrades
-          </Text>
+          High Quality{' '}
+          <Text component="span" className={classes.highlight} inherit>
+            CAT Scan
+          </Text>{' '}
+          for any Machine
         </Title>
 
         <Container p={0} size={600}>
           <Text size="lg" c="dimmed" className={classes.description}>
-            Transform your MRI capabilities with our innovative AI technology, enhancing image quality, 
-            reducing scanning times, and optimizing costs for better patient outcomes. 
-            Experience the future of medical imaging today.
+            Upload an image of the lower-quality scan you would like to upscale.
+            Then see the magic in action!
           </Text>
         </Container>
 
