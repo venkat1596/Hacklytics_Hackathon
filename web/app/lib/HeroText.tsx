@@ -37,7 +37,7 @@ export function HeroText() {
             className={classes.control}
             size="lg"
             component="a"
-            href="https://docs.google.com/document/d/your-doc-id/edit"
+            href="https://docs.google.com/document/d/1KhXCInHOQa2Ig_ewabaQrM6fq7R-X_bgoTpXDDzRFKM/edit?usp=sharing"
             target="_blank"
             rel="noopener noreferrer"
           >

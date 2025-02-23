@@ -84,11 +84,11 @@ export function NavbarSimpleColored() {
         </a>
 
         <a
-          href="https://docs.google.com/document/d/your-doc-id/edit"
+          href="https://docs.google.com/document/d/1KhXCInHOQa2Ig_ewabaQrM6fq7R-X_bgoTpXDDzRFKM/edit?usp=sharing"
           className={classes.link}
           onClick={(event) => {
             event.preventDefault();
-            window.open("https://docs.google.com/document/d/your-doc-id/edit", '_blank', 'noopener,noreferrer');
+            window.open("https://docs.google.com/document/d/1KhXCInHOQa2Ig_ewabaQrM6fq7R-X_bgoTpXDDzRFKM/edit?usp=sharing", '_blank', 'noopener,noreferrer');
           }}
         >
           <IconLogout className={classes.linkIcon} stroke={1.5} />
