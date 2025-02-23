@@ -1,6 +1,6 @@
 .wrapper {
     position: relative;
-    padding-top: 60px; /* Reduced from 120px to 60px */
+    padding-top: 30px; /* Reduced from 120px to 60px */
     padding-bottom: 40px; /* Reduced from 80px to 40px */
 
     @media (max-width: var(--mantine-breakpoint-sm)) {

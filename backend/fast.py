@@ -24,7 +24,7 @@ async def root():
 @app.post("/send-and-rec")
 async def send_and_rec(image: UploadFile = File(...)):
     file_path = f"{UPLOAD_FOLDER}/{image.filename}"
-    
+    print("entered send_and_rec")
     # Save the uploaded image
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
