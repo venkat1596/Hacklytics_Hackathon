@@ -22,10 +22,10 @@ export function HeroText() {
 
         <div className={classes.controls}>
           <Button className={classes.control} size="lg" variant="default" color="gray">
-            Request a Demo
+            Demo Video
           </Button>
           <Button className={classes.control} size="lg">
-            Learn More
+            Documentation
           </Button>
         </div>
       </div>

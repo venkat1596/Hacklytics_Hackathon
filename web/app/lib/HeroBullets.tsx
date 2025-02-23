@@ -1,4 +1,5 @@
-import { Button, Container, Group, Image, List, ListItem, Text, ThemeIcon, Title } from '@mantine/core';
+import { Button, Container, Group, Image, List, ListItem, Text, Title } from '@mantine/core';
+import Link from 'next/link'; // Import Link from next/link
 import classes from './HeroBullets.module.css';
 
 export function HeroBullets() {
@@ -26,12 +27,30 @@ export function HeroBullets() {
           </List>
 
           <Group mt={30}>
-            <Button radius="xl" size="md" className={classes.control}>
-              Explore Our Solutions
-            </Button>
-            <Button variant="default" radius="xl" size="md" className={classes.control}>
-              Schedule a Demo
-            </Button>
+            {/* Features Button with Link */}
+            <Link href="/about" passHref legacyBehavior>
+              <Button
+                component="a" // Render the button as an anchor tag
+                radius="xl"
+                size="md"
+                className={classes.control}
+              >
+                Features
+              </Button>
+            </Link>
+
+            {/* Demo Video Button with Link */}
+            <Link href="/demo-video" passHref legacyBehavior>
+              <Button
+                component="a" // Render the button as an anchor tag
+                variant="default"
+                radius="xl"
+                size="md"
+                className={classes.control}
+              >
+                Demo Video
+              </Button>
+            </Link>
           </Group>
         </div>
         {/* ✅ Kept the same image as before */}
