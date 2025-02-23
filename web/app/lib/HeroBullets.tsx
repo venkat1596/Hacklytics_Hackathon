@@ -40,7 +40,7 @@ export function HeroBullets() {
             </Link>
 
             {/* Demo Video Button with Link */}
-            <Link href="/demo-video" passHref legacyBehavior>
+            <Link href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" passHref legacyBehavior>
               <Button
                 component="a" // Render the button as an anchor tag
                 variant="default"
