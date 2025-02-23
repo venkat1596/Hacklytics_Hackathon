@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { IconCloudUpload, IconDownload, IconX } from '@tabler/icons-react';
-import { Button, Group, Text, useMantineTheme, RingProgress } from '@mantine/core';
+import { Button, Group, Text, useMantineTheme, RingProgress, Grid, Center, Box, Image } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import classes from './DropzoneButton.module.css';
 import axios from 'axios';
@@ -11,21 +11,25 @@ export function DropzoneButton() {
   const openRef = useRef<() => void>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
-  const [upScaled,setUpscaled] = useState<any>(null); 
+  const [upScaled, setUpscaled] = useState<any>(null);
   const [loading, changelstate] = useState<number>(0);
   const [show, ChangeShow] = useState<number>(1);
-
+  const [inputImage, setInputImage] = useState<string | null>(null); // State to store the input image
 
   // Function to handle file upload
   const handleDrop = async (files: File[]) => {
     console.log("Within Function");
     if (!files.length) return;
-    while(loading);
-    changelstate(1)
+    while (loading);
+    changelstate(1);
     const file = files[0];
     const data = new FormData();
     data.append('image', file, file.name); // Wrap the file in FormData
-  
+
+    // Set the input image for display
+    const inputImageUrl = URL.createObjectURL(file);
+    setInputImage(inputImageUrl);
+
     try {
       const response = await axios.post("http://127.0.0.1:8000/send-and-rec", data, {
         headers: {
@@ -43,29 +47,8 @@ export function DropzoneButton() {
     } catch (error) {
       console.error('Upload failed:', error);
     }
-    changelstate(0)
+    changelstate(0);
   };
-  const ImageLoaderWrapper = () =>
-  {
-    useEffect(() => {
-      ImageLoader()
-
-    }, [loading]) ;
-  }
-
-  const ImageLoader = () => {
-  
-    if (upScaled === null) {
-      return null;
-    }
-  
-    if (upScaled === 'loading') {
-      
-    }
-  
-    return <img src={upScaled} alt={"Result"} />;
-  };
-  
 
   return (
     <div className={classes.wrapper}>
@@ -101,20 +84,65 @@ export function DropzoneButton() {
         </div>
       </Dropzone>
 
-      <Button className={classes.control} size="md" radius="xl" onClick={() => ChangeShow((show + 1) % 2)}>
+      {/* Centered Lazy Loader */}
+      <Center mt="md">
+        {loading && (
+          <RingProgress
+            sections={[
+              { value: 60, color: 'cyan' },
+              { value: 20, color: 'pink' }
+            ]}
+          />
+        )}
+      </Center>
+
+      {/* 2-Grid Display for Input and Output Images */}
+{!loading && (inputImage || upScaled) && (
+  <Grid mt="md" gutter="md">
+    <Grid.Col span={6}>
+      <Box style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '8px' }}>
+        <Text ta="center" fw={500} mb="sm">Input Image</Text>
+        {inputImage && (
+          <Image 
+            src={inputImage} 
+            alt="Input" 
+            fit="contain" 
+            width="50%" // Set the width to 50% to cut the size in half
+            height="auto" // Maintain aspect ratio
+          />
+        )}
+      </Box>
+    </Grid.Col>
+    <Grid.Col span={6}>
+      <Box style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '8px' }}>
+        <Text ta="center" fw={500} mb="sm">Output Image</Text>
+        {upScaled ? (
+          <Image 
+            src={upScaled} 
+            alt="Result" 
+            fit="contain" 
+            width="50%" // Set the width to 50% to cut the size in half
+            height="auto" // Maintain aspect ratio
+          />
+        ) : (
+          <Text ta="center" c="dimmed">Placeholder for Output</Text>
+        )}
+      </Box>
+    </Grid.Col>
+  </Grid>
+)}
+
+
+      {/* Toggle Result Button with Margin */}
+      <Button
+        className={classes.control}
+        size="md"
+        radius="xl"
+        onClick={() => ChangeShow((show + 1) % 2)}
+        mt="10px" // Set the margin-top to 30 pixels
+        >
         Toggle Result
       </Button>
-      
-      {loading ? (
-    <RingProgress 
-      sections={[
-        { value: 60, color: 'cyan' },
-        { value: 20, color: 'pink' }
-      ]} 
-    />
-      ) : upScaled !== null && show === 0? (
-     <img src={upScaled} alt="Result" />
-     ) : null}
     </div>
   );
 }
