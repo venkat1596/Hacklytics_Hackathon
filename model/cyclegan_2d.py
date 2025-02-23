@@ -8,46 +8,29 @@ import pytorch_lightning as pl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from .generator_2d import EfficientInvertibleGenerator2D
-from .discriminator_2d import ProgressivePatchDiscriminator
+from . import TED, PatchDiscriminator
 
-class CycleGan2D(pl.LightningModule):
-    def __init__(self, generator_config, discriminator_config):
+
+class CycleMRIGAN(pl.LightningModule):
+    def __init__(self, generator_config):
         super().__init__()
         self.save_hyperparameters()
         self.generator_config = generator_config
-        self.discriminator_config = discriminator_config
 
-        if generator_config["model"] == "SAFM":
-            self.generator_1_5_to_3 = EfficientInvertibleGenerator2D(
-                dim=generator_config["features"],
-                n_blocks=generator_config["n_blocks"],
-                ffn_scale=generator_config["ffn_scale"]
-            )
-            self.generator_3_to_1_5 = EfficientInvertibleGenerator2D(
-                dim=generator_config["features"],
-                n_blocks=generator_config["n_blocks"],
-                ffn_scale=generator_config["ffn_scale"]
-            )
-        else:
-            raise NotImplementedError(f"{generator_config['model']} not implemented")
+        # Generators (using TED architecture)
+        self.generator_1_5_to_3 = TED(in_channels=1)
+        self.generator_3_to_1_5 = TED(in_channels=1)
 
-        if discriminator_config["model"] == "patch_gan":
-            self.discriminator_1_5_to_3 = ProgressivePatchDiscriminator(
-                in_channels=discriminator_config["in_channels"],
-                features=discriminator_config["features"],
-            )
-            self.discriminator_3_to_1_5 = ProgressivePatchDiscriminator(
-                in_channels=discriminator_config["in_channels"],
-                features=discriminator_config["features"]
-            )
-        else:
-            raise NotImplementedError(f"{discriminator_config['model']} not implemented")
+        # Discriminators
+        self.discriminator_1_5_to_3 = PatchDiscriminator(in_channels=1)
+        self.discriminator_3_to_1_5 = PatchDiscriminator(in_channels=1)
 
-        self.automatic_optimization = False
+        # Loss weights
+        self.lambda_cycle = 10.0
+        self.lambda_identity = 5.0
 
-    def forward(self, mri_img_1_5):
-        return self.generator_1_5_to_3(mri_img_1_5)
+    def adversarial_loss(self, y_hat, y):
+        return torch.mean((y_hat - y) ** 2)
 
     def configure_optimizers(self):
         optG = Adam(
@@ -66,74 +49,83 @@ class CycleGan2D(pl.LightningModule):
             lr=1e-4, betas=(0.5, 0.999)
         )
 
-        gamma = lambda epoch: 1 - max(0, epoch + 1 - 100) / 101
-        schG = LambdaLR(optG, lr_lambda=gamma)
-        schD = LambdaLR(optD, lr_lambda=gamma)
+        schG = torch.optim.lr_scheduler.CosineAnnealingLR(optG,
+                                                        T_max=self.generator_config["max_epochs"],
+                                                        eta_min=self.generator_config["min_lr"])
+        schD = torch.optim.lr_scheduler.CosineAnnealingLR(optD,
+                                                        T_max=self.generator_config["max_epochs"],
+                                                        eta_min=self.generator_config["min_lr"])
         return [optG, optD], [schG, schD]
 
     def generator_step(self, mri_img_1_5, mri_img_3):
-        # forward pass
-        fake_mri_img_3 = self.generator_1_5_to_3(mri_img_1_5)
-        fake_mri_img_1_5 = self.generator_3_to_1_5(mri_img_3)
+        # Identity loss
+        idt_3 = self.generator_1_5_to_3(mri_img_3)
+        idt_1_5 = self.generator_3_to_1_5(mri_img_1_5)
+        identity_loss = (
+                                F.l1_loss(idt_1_5, mri_img_1_5) +
+                                F.l1_loss(idt_3, mri_img_3)
+                        ) * self.lambda_identity
 
-        same_mri_1_5 = self.generator_3_to_1_5(mri_img_1_5)
-        same_mri_3 = self.generator_1_5_to_3(mri_img_3)
-
-        cycle_mri_1_5 = self.generator_3_to_1_5(fake_mri_img_3)
-        cycle_mri_3 = self.generator_1_5_to_3(fake_mri_img_1_5)
+        # GAN forward
+        fake_3 = self.generator_1_5_to_3(mri_img_1_5)
+        fake_1_5 = self.generator_3_to_1_5(mri_img_3)
 
         with torch.no_grad():
-            disc_fake_3 = self.discriminator_1_5_to_3(fake_mri_img_3)
-            disc_fake_1_5 = self.discriminator_3_to_1_5(fake_mri_img_1_5)
+            disc_fake_3 = self.discriminator_1_5_to_3(fake_3)
+            disc_fake_1_5 = self.discriminator_3_to_1_5(fake_1_5)
 
-        # Calculate losses
-        loss_identity = (
-                F.l1_loss(same_mri_1_5, mri_img_1_5) +
-                F.l1_loss(same_mri_3, mri_img_3)
-        )
+        # Cycle consistency
+        cycle_1_5 = self.generator_3_to_1_5(fake_3)
+        cycle_3 = self.generator_1_5_to_3(fake_1_5)
 
         cycle_loss = (
-                F.l1_loss(cycle_mri_1_5, mri_img_1_5) +
-                F.l1_loss(cycle_mri_3, mri_img_3)
+                             F.l1_loss(cycle_1_5, mri_img_1_5) +
+                             F.l1_loss(cycle_3, mri_img_3)
+                     ) * self.lambda_cycle
+
+        # Generator adversarial loss
+        g_loss = (
+                self.adversarial_loss(disc_fake_3, torch.ones_like(disc_fake_3) * 0.9) +
+                self.adversarial_loss(disc_fake_1_5, torch.ones_like(disc_fake_1_5) * 0.9)
         )
 
-        loss_G = (
-                F.mse_loss(disc_fake_3, torch.ones_like(disc_fake_3)) +
-                F.mse_loss(disc_fake_1_5, torch.ones_like(disc_fake_1_5))
-        )
-
-        loss = (
-                loss_G +
-                self.generator_config["cycle_weight"] * cycle_loss +
-                self.generator_config["identity_weight"] * loss_identity
-        )
+        total_g_loss = g_loss + cycle_loss + identity_loss
 
         return {
-            "total_loss": loss,
-            "loss_G": loss_G,
+            "loss": total_g_loss,
+            "g_loss": g_loss,
             "cycle_loss": cycle_loss,
-            "identity_loss": loss_identity
+            "identity_loss": identity_loss
         }
 
-    def discriminator_step(self, mri_img_1_5, mri_img_3):
-        with torch.no_grad():
-            fake_mri_img_3 = self.generator_1_5_to_3(mri_img_1_5)
-            fake_mri_img_1_5 = self.generator_3_to_1_5(mri_img_3)
+    def noisy_labels(self, size, target_value):
+        # Add noise to the target labels and clamp to valid range
+        noisy = torch.ones_like(size) * target_value + torch.randn_like(size) * 0.05
+        return torch.clamp(noisy, 0.0, 1.0)
 
+    def discriminator_step(self, mri_img_1_5, mri_img_3):
+        # Generate fakes
+        with torch.no_grad():
+            fake_3 = self.generator_1_5_to_3(mri_img_1_5)
+            fake_1_5 = self.generator_3_to_1_5(mri_img_3)
+
+        # Real loss
         disc_real_3 = self.discriminator_1_5_to_3(mri_img_3)
         disc_real_1_5 = self.discriminator_3_to_1_5(mri_img_1_5)
-
-        disc_fake_3 = self.discriminator_1_5_to_3(fake_mri_img_3)
-        disc_fake_1_5 = self.discriminator_3_to_1_5(fake_mri_img_1_5)
-
-        loss = (
-                F.mse_loss(disc_real_3, torch.ones_like(disc_real_3)) +
-                F.mse_loss(disc_real_1_5, torch.ones_like(disc_real_1_5)) +
-                F.mse_loss(disc_fake_3, torch.zeros_like(disc_fake_3)) +
-                F.mse_loss(disc_fake_1_5, torch.zeros_like(disc_fake_1_5))
+        real_loss = (
+                self.adversarial_loss(disc_real_3, self.noisy_labels(disc_real_3, 0.9)) +
+                self.adversarial_loss(disc_real_1_5, self.noisy_labels(disc_real_1_5, 0.9))
         )
 
-        return {"total_loss": loss}
+        # Fake loss
+        disc_fake_3 = self.discriminator_1_5_to_3(fake_3.detach())
+        disc_fake_1_5 = self.discriminator_3_to_1_5(fake_1_5.detach())
+        fake_loss = (
+                self.adversarial_loss(disc_fake_3, self.noisy_labels(disc_fake_3, 0.1)) +
+                self.adversarial_loss(disc_fake_1_5, self.noisy_labels(disc_fake_1_5, 0.1))
+        )
+
+        return {"loss": (real_loss + fake_loss) * 0.5}
 
     def training_step(self, batch, batch_idx):
         opt_g, opt_d = self.optimizers()
@@ -162,6 +154,17 @@ class CycleGan2D(pl.LightningModule):
         self.untoggle_optimizer(opt_d)
 
         self.log("discriminator_total_loss", d_loss_dict["total_loss"], prog_bar=True)
+
+    def on_train_epoch_end(self):
+        # Log current learning rates
+        opt_g, opt_d = self.optimizers()
+        sch_g, sch_d = self.lr_schedulers()
+        sch_g.step()
+        sch_d.step()
+
+        # Log LR values
+        self.log("lr_g", opt_g.param_groups[0]['lr'])
+        self.log("lr_d", opt_d.param_groups[0]['lr'])
 
     def visualize_and_save_comparison(self, batch, generated_image, batch_idx, step):
         """Create and save visualization comparing input, generated, and target images."""
@@ -220,8 +223,8 @@ class CycleGan2D(pl.LightningModule):
         )
 
         # Save visualization
-        os.makedirs('visualizations', exist_ok=True)
-        fig.write_html(f'visualizations/comp_s{str(step).zfill(3)}_b{str(batch_idx).zfill(3)}.html')
+        os.makedirs('./CycleGAN/visualizations', exist_ok=True)
+        fig.write_html(f'./CycleGAN/visualizations/comp_s{str(step).zfill(3)}_b{str(batch_idx).zfill(3)}.html')
         return fig
 
     def validation_step(self, batch, batch_idx):

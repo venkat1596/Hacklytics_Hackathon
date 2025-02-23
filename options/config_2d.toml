@@ -8,8 +8,8 @@ valid_source_dir = "./data/ConstraintTest/testA"  # Directory containing validat
 valid_target_dir = "./data/ConstraintTest/testB"  # Directory containing test images
 
 stats_file = "stats/dataset_stats.json"
-checkpoint_dir = "two_dim/checkpoints"
-visualization_dir = "two_dim/visualizations"
+checkpoint_dir = "CycleGAN/checkpoints"
+visualization_dir = "CycleGAN/visualizations"
 
 [datamodule]
 batch_size = 4
@@ -20,7 +20,7 @@ target_rotation_angle = 5.0
 target_translation = 0.05
 
 [generator]
-model = "SAFM"
+model = "TED"
 features = 32
 n_blocks = 4
 ffn_scale = 2.0

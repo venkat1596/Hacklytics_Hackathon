@@ -29,41 +29,27 @@ class Downsample(nn.Module):
         x = self.conv(self.pad(x))
         return x
 
-class PatchDisc(nn.Module):
-    def __init__(self, in_channels, features):
+
+class PatchDiscriminator(nn.Module):
+    def __init__(self, in_channels=1, features=16):
         super().__init__()
+        self.initial = nn.Sequential(
+            nn.Conv2d(in_channels, features, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
 
-        class PatchDisc(nn.Module):
-            def __init__(self, in_channels, features):
-                super().__init__()
-                # Reduce to 3 blocks instead of 4
-                self.conv1 = ConvModule(in_channels, features)
-                self.down1 = Downsample(features)
-
-                self.conv2 = ConvModule(features, features * 2)
-                self.down2 = Downsample(features * 2)
-
-                self.conv3 = ConvModule(features * 2, features * 2)  # Limit feature multiplication
-                self.down3 = Downsample(features * 2)
-
-                self.final_conv = nn.Conv3d(features * 2, features, kernel_size=4, stride=1, padding=1)
+        self.model = nn.Sequential(
+            ConvModule(features, features * 2),
+            Downsample(features * 2),
+            ConvModule(features * 2, features * 4),
+            Downsample(features * 4),
+            ConvModule(features * 4, features * 4),
+            nn.Conv2d(features * 4, 1, kernel_size=4, stride=1, padding=1)
+        )
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.down1(x)
-
-        x = self.conv2(x)
-        x = self.down2(x)
-
-        x = self.conv3(x)
-        x = self.down3(x)
-
-        x = self.final_conv(x)
-        return x
-
-    def set_requires_grad(self, requires_grad=False):
-        for param in self.parameters():
-            param.requires_grad = requires_grad
+        x = self.initial(x)
+        return self.model(x)
 
 
 
