@@ -86,18 +86,18 @@ export function DropzoneButton() {
 
       {/* Centered Lazy Loader */}
       <Center mt="md">
-        {loading && (
+        {loading ? 
           <RingProgress
             sections={[
               { value: 60, color: 'cyan' },
               { value: 20, color: 'pink' }
             ]}
-          />
-        )}
+          /> : null
+        }
       </Center>
 
      {/* 2-Grid Display for Input and Output Images */}
-{!loading && (inputImage || upScaled) && (show) && (
+{(!loading && (inputImage || upScaled) && (show)) ? 
   <Grid mt="md" gutter="md">
     <Grid.Col span={6}>
       <Box style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '8px' }}>
@@ -130,7 +130,7 @@ export function DropzoneButton() {
       </Box>
     </Grid.Col>
   </Grid>
-)}
+: null}
 
       {/* Toggle Result Button with Margin */}
       {(<Button
