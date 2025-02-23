@@ -2,6 +2,7 @@
 import { Container } from '@mantine/core'; // Removed unused imports
 import Image from 'next/image'; // Import Image from next/image
 import classes from './Banner.module.css';
+import Logo from '../../public/Logo.png'
 
 export function Banner() {
   return (
@@ -9,7 +10,7 @@ export function Banner() {
       <Container size="md" className={classes.inner}>
         {/* Centered Logo */}
         <Image
-          src="/logo.png" // Path to your logo image in the public folder
+          src={Logo} // Path to your logo image in the public folder
           alt="Logo"
           width={100} // Set the width of the logo
           height={50} // Set the height of the logo

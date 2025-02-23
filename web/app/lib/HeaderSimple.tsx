@@ -5,6 +5,7 @@ import { useDisclosure } from '@mantine/hooks';
 import Link from 'next/link'; // Import Link from next/link
 import Image from 'next/image'; // Import Image from next/image
 import classes from './HeaderSimple.module.css';
+import Logo from '../../public/Logo.png'
 
 const links = [
   { link: '/', label: 'Home' },
@@ -31,11 +32,11 @@ export function HeaderSimple() {
       <Container size="md" className={classes.inner}>
         {/* Add the Image component here */}
         <Image
-          src="/logo.png" // Path to your logo image in the public folder
-          alt="Logo"
-          width={100} // Set the width of the logo
-          height={50} // Set the height of the logo
-          className={classes.logo} // Add a class for styling if needed
+          src={Logo} /* Path to your logo image in the public folder */
+          alt="Logos"
+          width={100}
+          height={50} 
+          className={classes.logo} 
         />
 
         <Group gap={5} visibleFrom="xs">

@@ -96,8 +96,8 @@ export function DropzoneButton() {
         )}
       </Center>
 
-      {/* 2-Grid Display for Input and Output Images */}
-{!loading && (inputImage || upScaled) && (
+     {/* 2-Grid Display for Input and Output Images */}
+{!loading && (inputImage || upScaled) && (show) && (
   <Grid mt="md" gutter="md">
     <Grid.Col span={6}>
       <Box style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '8px' }}>
@@ -116,7 +116,7 @@ export function DropzoneButton() {
     <Grid.Col span={6}>
       <Box style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '8px' }}>
         <Text ta="center" fw={500} mb="sm">Output Image</Text>
-        {upScaled ? (
+        {upScaled !== null? (
           <Image 
             src={upScaled} 
             alt="Result" 
@@ -132,9 +132,8 @@ export function DropzoneButton() {
   </Grid>
 )}
 
-
       {/* Toggle Result Button with Margin */}
-      <Button
+      {(<Button
         className={classes.control}
         size="md"
         radius="xl"
@@ -143,6 +142,7 @@ export function DropzoneButton() {
         >
         Toggle Result
       </Button>
+      )}
     </div>
   );
 }
