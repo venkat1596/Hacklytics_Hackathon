@@ -70,6 +70,10 @@ Our AI-driven solution benefits various stakeholders in the healthcare industry:
 - To run the backend
   ```bash
   pip install -r requirements.txt
+- To run the server, enter the `backend` directory 
+  ```bash
+  fastapi dev fast.py
+  
 ## References:
 These Projects and Papers were used as references for this project:
 - https://github.com/wilbertcaine/CUT
