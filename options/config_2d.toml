@@ -20,6 +20,7 @@ target_translation = 0.05
 
 [model]
 model = "TED"
+
 features = 32
 n_blocks = 4
 ffn_scale = 2.0
@@ -29,7 +30,7 @@ min_lr = 1e-6
 lr = 1e-4
 
 [discriminator]
-model = "patch_gan"
+model = "CUT"
 in_channels = 1
 features = 32
 min_lr = 1e-6

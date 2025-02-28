@@ -1,0 +1,75 @@
+# Experiment Configuration
+[experiment]
+name = "mri_translation_cut"
+description = "Contrastive learning for unpaired MRI translation"
+
+# Path Configuration
+[paths]
+output_dir = "./experiments"
+
+# Data Configuration
+[data]
+train_source_dir = "./data/Jpegs/1_5_Train"
+train_target_dir = "./data/Jpegs/3_Train"
+valid_source_dir = "./data/Jpegs/1_5_Valid"
+valid_target_dir = "./data/Jpegs/3_Valid"
+stats_file = "./data/dataset_stats.json"
+batch_size = 4
+num_workers = 4
+
+# Augmentation Configuration
+[augmentation]
+# Consider reducing these values for medical images
+source_rotation_angle = 5.0  # Reduced from 10.0
+source_translation = 0.05    # Reduced from 0.1
+target_rotation_angle = 3.0  # Reduced from 5.0
+target_translation = 0.03    # Reduced from 0.05
+
+# Generator Configuration
+[generator]
+model = "multi_scale_fusion"
+f_model = "PatchSampleF"
+in_channels = 1
+out_channels = 1
+features = 64
+n_blocks = 9
+n_layers = 3
+layers = [0, 1, 2, 3]  # Which layers to extract features from
+use_mlp = true
+init_type = "normal"
+init_gain = 0.02
+nc = 256
+gpu_ids = []
+num_patches = 256
+nce_weight = 1.0
+nce_weight_identity = 1.0
+nce_T = 0.07  # Temperature parameter for NCE loss
+lr = 0.0002
+f_lr = 0.0002
+min_lr = 0.000001
+max_epochs = 200
+batch_size = 1
+
+# Discriminator Configuration
+[discriminator]
+model = "CUT"
+in_channels = 1
+features = 64
+n_layers = 3
+lr = 0.0002
+min_lr = 0.000001
+max_epochs = 200
+
+# Training Configuration
+[training]
+seed = 42
+max_epochs = 200
+devices = [0]  # GPU devices to use
+precision = '32-true'  # Can use 16 for mixed precision training
+monitor_metric = "val_total_loss"
+patience = 20  # Early stopping patience
+save_top_k = 3  # Number of best models to save
+gradient_clip_val = 0.5
+accumulate_grad_batches = 1
+log_every_n_steps = 50
+deterministic = true

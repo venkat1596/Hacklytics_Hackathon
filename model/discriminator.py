@@ -22,11 +22,10 @@ class ConvModule(nn.Module):
 class Downsample(nn.Module):
     def __init__(self, features):
         super().__init__()
-        self.pad = nn.ReflectionPad2d(1)
-        self.conv = nn.Conv2d(features, features, kernel_size=3, stride=2)
+        self.conv = nn.Conv2d(features, features, kernel_size=3, stride=2, padding=1)
 
     def forward(self, x):
-        x = self.conv(self.pad(x))
+        x = self.conv(x)
         return x
 
 
@@ -92,3 +91,67 @@ class Spectral_Discriminator(nn.Module):
     def forward(self, x):
         return self.conv_blocks(x)
 
+
+import torch.nn as nn
+from torch.nn.utils.parametrizations import spectral_norm
+
+
+class NLayerDiscriminator(nn.Module):
+    """Spectral Normalized PatchGAN Discriminator"""
+
+    def __init__(self, input_nc, ndf=64, n_layers=3, no_antialias=False):
+        super().__init__()
+        kw = 4
+        padw = 1
+
+        # Layer sequence construction
+        layers = []
+
+        # Initial block
+        if no_antialias:
+            conv = spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw))
+            layers += [conv, nn.LeakyReLU(0.2, True)]
+        else:
+            conv = spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=1, padding=padw))
+            layers += [conv, nn.LeakyReLU(0.2, True), Downsample(ndf)]
+
+        # Intermediate blocks
+        nf_mult = 1
+        for n in range(1, n_layers):
+            nf_mult_prev = nf_mult
+            nf_mult = min(2 ** n, 8)
+            if no_antialias:
+                block = [
+                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+                                            kernel_size=kw, stride=2, padding=padw)),
+                    nn.LeakyReLU(0.2, True)
+                ]
+            else:
+                block = [
+                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+                                            kernel_size=kw, stride=1, padding=padw)),
+                    nn.LeakyReLU(0.2, True),
+                    Downsample(ndf * nf_mult)
+                ]
+            layers += block
+
+        # Final layers
+        nf_mult_prev = nf_mult
+        nf_mult = min(2 ** n_layers, 8)
+        layers += [
+            spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+                                    kernel_size=kw, stride=1, padding=padw)),
+            nn.LeakyReLU(0.2, True)
+        ]
+
+        # Output layer
+        layers += [
+            spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))
+        ]
+
+        self.layers = nn.ModuleList(layers)
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x

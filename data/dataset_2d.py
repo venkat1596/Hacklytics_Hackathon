@@ -89,7 +89,8 @@ class UnpairedMRIDataset(Dataset):
         """Normalize image to [-1, 1] range using domain statistics"""
         img_array = np.array(img, dtype=np.float32)
         normalized = (img_array - stats['min']) / (stats['max'] - stats['min'] + 1e-6)
-        return (normalized * 2) - 1
+        normalized = (normalized - 0.5) / 0.5
+        return normalized
 
     def __len__(self):
         return max(len(self.source_files), len(self.target_files))
@@ -121,7 +122,8 @@ class UnpairedMRIDataset(Dataset):
             'source_global_min': torch.tensor(self.source_stats['min']),
             'source_global_max': torch.tensor(self.source_stats['max']),
             'target_global_min': torch.tensor(self.target_stats['min']),
-            'target_global_max': torch.tensor(self.target_stats['max'])
+            'target_global_max': torch.tensor(self.target_stats['max']),
+            'image_name': self.source_files[source_idx].name.split('.')[0]
         }
 
 

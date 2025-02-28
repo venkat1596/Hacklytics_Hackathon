@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from model import CycleFreeCycleGan
+from model import CycleFreeCycleGan, ContrastiveTraining
 from data import MRIDataModule2D
 
 
@@ -35,10 +35,8 @@ def main():
     config['generator']['max_epochs'] = config['trainer']['max_epochs']
     config['discriminator']['max_epochs'] = config['trainer']['max_epochs']
     # Initialize model
-    model = CycleFreeCycleGan(
-        generator_config = config['generator'],
-        discriminator_config = config['discriminator'],
-    )
+    model = ContrastiveTraining(generator_config=config['generator'],
+                                discriminator_config=config['discriminator'])
 
     # Setup callbacks
     checkpoint_callback = ModelCheckpoint(
