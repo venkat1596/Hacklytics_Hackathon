@@ -11,7 +11,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import OptimizerLRScheduler, STEP_OUTPUT
 
 from . import MultiScaleFusionGenerator, PatchSampleF, NLayerDiscriminator
-torch.use_deterministic_algorithms(True, warn_only=True)
 
 
 class PatchNCELoss(nn.Module):
@@ -135,54 +134,61 @@ class ContrastiveTraining(pl.LightningModule):
             for param in self.discriminator.parameters():
                 param.requires_grad = True
 
-
     def generator_step(self, single_image, image_size, train_mode="train"):
         self.set_require_grad("gen")
-        # Forward pass
+
+        # Split input for clarity
+        real_target = single_image[image_size:]
+
+        # Forward pass (generate both target and identity in one step)
         fake_image = self.generator(single_image, encode_only=False)
         fake_image_target = fake_image[:image_size]
         fake_image_identity = fake_image[image_size:]
 
-        # Encoding
-        fake_target_encoded = self.generator(single_image[:image_size], layers=self.generator_config['layers'], encode_only=True)
-        fake_identity_encoded = self.generator(single_image[image_size:], layers=self.generator_config['layers'], encode_only=True)
+        # Encode fake images and split features in one pass
+        fake_encoding = self.generator(fake_image, layers=self.generator_config['layers'], encode_only=True)
+        fake_target_encoded = [feat[:image_size] for feat in fake_encoding]
+        fake_identity_encoded = [feat[image_size:] for feat in fake_encoding]
 
-        # F net Identity
-        real_features = self.generator(single_image[image_size:], layers=self.generator_config['layers'],
-                                       encode_only=True)
-        real_features_identity, patch_ids = self.f_model(real_features, num_patches=self.generator_config["num_patches"])
-        fake_identity_encoded, _ = self.f_model(fake_identity_encoded,
-                                                        num_patches=self.generator_config["num_patches"],
-                                                        patch_ids=patch_ids)
+        # Get real features
+        real_features_encoded = self.generator(real_target, layers=self.generator_config['layers'], encode_only=True)
+
+        # Apply F-net to extract patches
+        real_features_patched, patch_ids = self.f_model(real_features_encoded,
+                                                        num_patches=self.generator_config["num_patches"])
+        fake_identity_patched, _ = self.f_model(fake_identity_encoded, num_patches=self.generator_config["num_patches"],
+                                                patch_ids=patch_ids)
+        fake_target_patched, _ = self.f_model(fake_target_encoded, num_patches=self.generator_config["num_patches"],
+                                              patch_ids=patch_ids)
+
+        # Calculate NCE losses in a single loop
         n_layers = len(self.generator_config['layers'])
         total_nce_loss_identity = 0.0
-        for f_q, f_k, crit, nce_layer in zip(real_features_identity, fake_identity_encoded, self.criterionNCE,
-                                             self.generator_config['layers']):
-            loss = crit(f_q, f_k) * self.generator_config['nce_weight_identity']
-            total_nce_loss_identity += loss.mean()
-
-        total_nce_loss_identity = total_nce_loss_identity / n_layers
-
-        # F net
-        real_features_encoded, patch_ids = self.f_model(real_features, num_patches=self.generator_config["num_patches"])
-        fake_target_encoded, _ = self.f_model(fake_target_encoded, num_patches=self.generator_config["num_patches"],
-                                                      patch_ids=patch_ids)
         total_nce_loss_encoded = 0.0
-        for f_q, f_k, crit, nce_layer in zip(real_features_encoded, fake_target_encoded, self.criterionNCE,
-                                             self.generator_config['layers']):
-            loss = crit(f_q, f_k) * self.generator_config['nce_weight']
-            total_nce_loss_encoded += loss.mean()
 
-        total_nce_loss_encoded = total_nce_loss_encoded / n_layers
+        for real_feat, fake_id_feat, fake_tgt_feat, crit, nce_layer in zip(
+                real_features_patched, fake_identity_patched, fake_target_patched,
+                self.criterionNCE, self.generator_config['layers']):
+            # Identity NCE loss
+            identity_loss = crit(real_feat, fake_id_feat) * self.generator_config['nce_weight_identity']
+            total_nce_loss_identity += identity_loss.mean()
 
-        # Generator loss
+            # Target NCE loss
+            target_loss = crit(real_feat, fake_tgt_feat) * self.generator_config['nce_weight']
+            total_nce_loss_encoded += target_loss.mean()
+
+        total_nce_loss_identity /= n_layers
+        total_nce_loss_encoded /= n_layers
+
+        # Calculate generator and identity losses
         pred_fake_target = self.discriminator(fake_image_target)
         loss_G_fake = self.l1_loss(pred_fake_target, torch.ones_like(pred_fake_target) * 0.9)
+        loss_G_identity = self.identity_loss(fake_image_identity, real_target)
 
-        loss_G_identity = self.identity_loss(fake_image_identity, single_image[image_size:])
-
+        # Combine all losses
         total_loss = loss_G_fake + loss_G_identity * 5.0 + total_nce_loss_identity + total_nce_loss_encoded
 
+        # Logging
         self.log(f"{train_mode}_total_loss", total_loss, prog_bar=True, on_epoch=True)
         self.log(f"{train_mode}_g_loss", loss_G_fake, prog_bar=True, on_epoch=True)
         self.log(f"{train_mode}_identity_loss", loss_G_identity, prog_bar=True, on_epoch=True)
@@ -211,31 +217,55 @@ class ContrastiveTraining(pl.LightningModule):
         source, target = batch["source"], batch["target"]
         image_size = source.shape[0]
         single_image = torch.cat((source, target), dim=0)
-
         opt_g, opt_f, opt_d = self.optimizers()
 
-        # Generator training phase
+        # Get accumulation and clipping values from config
+        accumulate_steps = self.generator_config['accumulate_grad_batches']
+        clip_val = self.generator_config['gradient_clip_val']
+
+        # === GENERATOR PHASE ===
         self.toggle_optimizer(opt_g)
         self.toggle_optimizer(opt_f)
-        g_loss = self.generator_step(single_image, image_size, train_mode="train")
+
+        # Scale loss by 1/accumulate_steps for proper gradient accumulation
+        g_loss = self.generator_step(single_image, image_size, train_mode="train") / accumulate_steps
         self.manual_backward(g_loss)
 
-        opt_g.step()
-        opt_g.zero_grad()
+        # Only update weights after accumulating gradients for specified steps
+        if (batch_idx + 1) % accumulate_steps == 0:
+            # Apply gradient clipping before optimizer step
+            self.clip_gradients(opt_g, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
+            self.clip_gradients(opt_f, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
 
-        opt_f.step()
-        opt_f.zero_grad()
+            # Perform optimizer steps
+            opt_g.step()
+            opt_g.zero_grad()
+            opt_f.step()
+            opt_f.zero_grad()
 
         self.untoggle_optimizer(opt_g)
         self.untoggle_optimizer(opt_f)
 
-        # Discriminator training phase
+        # === DISCRIMINATOR PHASE ===
         self.toggle_optimizer(opt_d)
-        d_loss = self.discriminator_step(single_image, image_size, train_mode="train")
+
+        # Scale loss for gradient accumulation
+        d_loss = self.discriminator_step(single_image, image_size, train_mode="train") / accumulate_steps
         self.manual_backward(d_loss)
-        opt_d.step()
-        opt_d.zero_grad()
+
+        # Only update weights after accumulating for specified steps
+        if (batch_idx + 1) % accumulate_steps == 0:
+            # Apply gradient clipping
+            self.clip_gradients(opt_d, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
+
+            # Perform optimizer step
+            opt_d.step()
+            opt_d.zero_grad()
+
         self.untoggle_optimizer(opt_d)
+
+        # Return original losses (unscaled) for logging
+        return {"g_loss": g_loss * accumulate_steps, "d_loss": d_loss * accumulate_steps}
 
     def on_train_epoch_end(self):
         # Log current learning rates

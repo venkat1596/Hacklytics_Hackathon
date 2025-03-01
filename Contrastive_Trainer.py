@@ -81,8 +81,7 @@ def main(config):
         logger=logger,
         precision=config["training"]["precision"],
         accumulate_grad_batches=config["training"].get("accumulate_grad_batches", 1),
-        log_every_n_steps=config["training"].get("log_every_n_steps", 50),
-        deterministic=config["training"].get("deterministic", False)
+        log_every_n_steps=config["training"].get("log_every_n_steps", 50)
     )
 
     # Train the model
