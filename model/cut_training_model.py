@@ -234,8 +234,8 @@ class ContrastiveTraining(pl.LightningModule):
         # Only update weights after accumulating gradients for specified steps
         if (batch_idx + 1) % accumulate_steps == 0:
             # Apply gradient clipping before optimizer step
-            self.clip_gradients(opt_g, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
-            self.clip_gradients(opt_f, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
+            # self.clip_gradients(opt_g, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
+            # self.clip_gradients(opt_f, gradient_clip_val=clip_val, gradient_clip_algorithm="norm")
 
             # Perform optimizer steps
             opt_g.step()
