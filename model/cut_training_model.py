@@ -11,6 +11,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import OptimizerLRScheduler, STEP_OUTPUT
 
 from . import MultiScaleFusionGenerator, PatchSampleF, NLayerDiscriminator
+from .cyclefreeGAN_generator import InvertibleGenerator
+from .cyclefreeGAN_discriminator import Discriminator_patch as Discriminator
 
 
 class PatchNCELoss(nn.Module):
@@ -78,6 +80,11 @@ class ContrastiveTraining(pl.LightningModule):
             self.generator = MultiScaleFusionGenerator(input_nc=generator_config["in_channels"],
                                                        output_nc=generator_config["out_channels"],
                                                        ngf=generator_config["features"], n_blocks=generator_config["n_blocks"])
+        elif self.generator_config["model"] == "invertible":
+            self.generator = InvertibleGenerator(in_channel=generator_config["in_channel"], 
+                                                 n_block=generator_config["n_block"],
+                                                 squeeze_num=generator_config["squeeze_num"], 
+                                                 conv_lu=generator_config["conv_lu"], block_type=generator_config["block_type"])
         else:
             raise ValueError("Generator model not supported")
 
@@ -93,6 +100,8 @@ class ContrastiveTraining(pl.LightningModule):
             self.discriminator = NLayerDiscriminator(input_nc=discriminator_config["in_channels"],
                                                      ndf=discriminator_config["features"],
                                                      n_layers=discriminator_config["n_layers"])
+        elif self.discriminator_config["model"] == "cyclefreeGAN":
+            self.discriminator = Discriminator()
         else:
             raise ValueError("Discriminator model not supported")
 
