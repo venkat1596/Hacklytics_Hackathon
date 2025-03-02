@@ -27,13 +27,12 @@ target_translation = 0.03    # Reduced from 0.05
 
 # Generator Configuration
 [generator]
-# model = "multi_scale_fusion"
-model = "invertible"
+model = "multi_scale_fusion"
 f_model = "PatchSampleF"
 in_channels = 1
 out_channels = 1
-features = 32
-n_blocks = 9
+features = 64
+n_blocks = 4
 n_layers = 3
 layers = [0, 1, 2, 3]  # Which layers to extract features from
 use_mlp = true
@@ -50,16 +49,12 @@ f_lr = 0.0002
 min_lr = 0.000001
 max_epochs = 200
 batch_size = 16
-block_type = "residual"
-squeeze_num = 2
-n_block = 4
-in_channel = 1
-conv_lu = true
+gradient_clip_val = 0.5
+accumulate_grad_batches = 1
 
 # Discriminator Configuration
 [discriminator]
-# model = "CUT"
-model = "cyclefreeGAN"
+model = "CUT"
 in_channels = 1
 features = 32
 n_layers = 3
@@ -76,7 +71,5 @@ precision = '32-true'  # Can use 16 for mixed precision training
 monitor_metric = "val_total_loss"
 patience = 10  # Early stopping patience
 save_top_k = 3  # Number of best models to save
-gradient_clip_val = 0.5
-accumulate_grad_batches = 1
 log_every_n_steps = 50
 deterministic = true

@@ -8,4 +8,5 @@ from .cyclegan_2d import CycleMRIGAN
 from .cycle_free_cycle_gan_trainer import CycleFreeCycleGan
 from .efficient_generator import MultiScaleFusionGenerator
 
-from .cut_training_model import ContrastiveTraining
+from .main_cut_trainer import ContrastiveTraining
+from .cycle_free_cycle_trainer import CycleFreeContrastiveTraining

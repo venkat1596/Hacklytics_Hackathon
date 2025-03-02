@@ -69,7 +69,7 @@ class PatchNCELoss(nn.Module):
         return loss
 
 
-class ContrastiveTraining(pl.LightningModule):
+class CycleFreeContrastiveTraining(pl.LightningModule):
     def __init__(self, generator_config, discriminator_config):
         super().__init__()
         self.save_hyperparameters()
