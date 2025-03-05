@@ -9,6 +9,7 @@ output_dir = "./experiments"
 
 # Data Configuration
 [data]
+data_type = "paired"  # "unpaired" or "paired"
 train_source_dir = "./data/Jpegs/1_5_Train"
 train_target_dir = "./data/Jpegs/3_Train"
 valid_source_dir = "./data/Jpegs/1_5_Valid"
@@ -51,6 +52,9 @@ max_epochs = 200
 batch_size = 16
 gradient_clip_val = 0.5
 accumulate_grad_batches = 1
+paired_identity_loss = true
+percep_layers = [2, 7, 12]
+percep_weights = [0.5, 0.5, 0.2]
 
 # Discriminator Configuration
 [discriminator]

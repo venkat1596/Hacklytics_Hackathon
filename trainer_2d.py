@@ -6,7 +6,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from model import CycleFreeCycleGan, ContrastiveTraining
-from data import MRIDataModule2D
+from data import MRIDataModule2D, MRITargetDataModule
 
 
 def main():
@@ -18,19 +18,31 @@ def main():
     os.makedirs(config['paths']['visualization_dir'], exist_ok=True)
 
     # Initialize data module
-    data_module = MRIDataModule2D(
-        train_source_dir=config['paths']['train_source_dir'],
-        train_target_dir=config['paths']['train_target_dir'],
-        valid_source_dir=config['paths']['valid_source_dir'],
-        valid_target_dir=config['paths']['valid_target_dir'],
-        stats_file=config['paths']['stats_file'],
-        batch_size=config['datamodule']['batch_size'],
-        num_workers=config['datamodule']['num_workers'],
-        source_rotation_angle=config['datamodule']['source_rotation_angle'],
-        source_translation=config['datamodule']['source_translation'],
-        target_rotation_angle=config['datamodule']['target_rotation_angle'],
-        target_translation=config['datamodule']['target_translation']
-    )
+
+    if config["data"]["type"] == "unpaired":
+        data_module = MRIDataModule2D(
+            train_source_dir=config['paths']['train_source_dir'],
+            train_target_dir=config['paths']['train_target_dir'],
+            valid_source_dir=config['paths']['valid_source_dir'],
+            valid_target_dir=config['paths']['valid_target_dir'],
+            stats_file=config['paths']['stats_file'],
+            batch_size=config['datamodule']['batch_size'],
+            num_workers=config['datamodule']['num_workers'],
+            source_rotation_angle=config['datamodule']['source_rotation_angle'],
+            source_translation=config['datamodule']['source_translation'],
+            target_rotation_angle=config['datamodule']['target_rotation_angle'],
+            target_translation=config['datamodule']['target_translation']
+        )
+    elif config["data"]["type"] == "paired":
+        data_module = MRITargetDataModule(
+            train_source_dir=config['paths']['train_source_dir'],
+            train_target_dir=config['paths']['train_target_dir'],
+            valid_source_dir=config['paths']['valid_source_dir'],
+            valid_target_dir=config['paths']['valid_target_dir'],
+            stats_file=config['paths']['stats_file'],
+            batch_size=config['datamodule']['batch_size'],
+            num_workers=config['datamodule']['num_workers']
+        )
 
     config['generator']['max_epochs'] = config['trainer']['max_epochs']
     config['discriminator']['max_epochs'] = config['trainer']['max_epochs']

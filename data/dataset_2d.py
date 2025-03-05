@@ -3,11 +3,13 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 import torch
+import cv2 as cv
 from torch.utils.data import Dataset, DataLoader
 import pytorch_lightning as pl
 from torchvision import transforms
 import json
 import random
+
 
 
 class UnpairedMRIDataset(Dataset):
@@ -125,6 +127,174 @@ class UnpairedMRIDataset(Dataset):
             'target_global_max': torch.tensor(self.target_stats['max']),
             'image_name': self.source_files[source_idx].name.split('.')[0]
         }
+
+
+class MRITargetDataset(torch.utils.data.Dataset):
+    def __init__(self, source_dir, target_dir, stats_file='./dataset_stats.json'):
+        self.img_pairs = self._calculate_pair_file(source_dir, target_dir)
+        self.stats_file = stats_file
+
+        if len(self.img_pairs) == 0:
+            raise ValueError("No image pairs found. Check source and target directories.")
+        self.source_stats, self.target_stats = self._get_or_calculate_stats()
+
+    def __len__(self):
+        return len(self.img_pairs)
+
+    def normalize_image(self, img, stats):
+        """Normalize image to [-1, 1] range using domain statistics"""
+        img_array = np.array(img, dtype=np.float32)
+        normalized = (img_array - stats['min']) / (stats['max'] - stats['min'] + 1e-6)
+        normalized = (normalized - 0.5) / 0.5
+        return normalized
+
+    def __getitem__(self, idx):
+        source_path, target_path = self.img_pairs[idx]
+        source_img = Image.open(source_path).convert('F')
+        source_norm = self.normalize_image(source_img, self.source_stats)
+
+        target_img = Image.open(target_path).convert('F')
+        target_norm = self.normalize_image(target_img, self.target_stats)
+
+        return {
+            'source': torch.from_numpy(source_norm),
+            'target': torch.from_numpy(target_norm),
+            'source_global_min': torch.tensor(self.source_stats['min']),
+            'source_global_max': torch.tensor(self.source_stats['max']),
+            'target_global_min': torch.tensor(self.target_stats['min']),
+            'target_global_max': torch.tensor(self.target_stats['max']),
+            'image_name': Path(source_path).stem
+        }
+
+    def _calculate_pair_file(self, source_dir, target_dir):
+        source_dir = Path(source_dir).absolute()
+        target_dir = Path(target_dir).absolute()
+
+        supported_ext = ["*.png", "*.jpg", "*.jpeg"]
+
+        source_files = []
+        for ext in supported_ext:
+            source_files.extend(list(source_dir.rglob(ext)))
+
+        img_pair_list = []
+
+        for img_path in source_files:
+            img_name = img_path.stem
+            img_parent = img_path.parent
+            # Check for multiple possible image extensions
+            target_base = target_dir / img_parent / img_name
+            possible_extensions = ['.png', '.jpg', '.jpeg']
+            target_path = None
+
+            # Try each possible extension
+            for ext in possible_extensions:
+                possible_path = target_base.with_suffix(ext)
+                if possible_path.exists():
+                    target_path = possible_path
+                    break
+
+            if target_path is None:
+                print(f"Target image not found for {img_name} (tried png, jpg, jpeg)")
+                continue
+
+            img_pair_list.append((img_path, target_path))
+
+        return img_pair_list
+
+    def _get_or_calculate_stats(self):
+        """Get statistics from JSON file or calculate if not exists"""
+        # Create stats directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.stats_file), exist_ok=True)
+
+        if os.path.exists(self.stats_file):
+            print(f"Loading statistics from {self.stats_file}")
+            with open(self.stats_file, 'r') as f:
+                stats = json.load(f)
+                return stats['source'], stats['target']
+        else:
+            print("Statistics file not found. Calculating statistics...")
+
+            max_source_dir = float('-inf')
+            min_source_dir = float('inf')
+
+            max_target_dir = float('-inf')
+            min_target_dir = float('inf')
+
+            for source_img, target_img in self.img_pairs:
+                source_img = Image.open(source_img).convert('F')
+                target_img = Image.open(target_img).convert('F')
+
+                source_img = np.array(source_img)
+                target_img = np.array(target_img)
+
+                max_source_dir = max(max_source_dir, np.max(source_img))
+                min_source_dir = min(min_source_dir, np.min(source_img))
+
+                max_target_dir = max(max_target_dir, np.max(target_img))
+                min_target_dir = min(min_target_dir, np.min(target_img))
+
+            source_stats = {'max': float(max_source_dir), 'min': float(min_source_dir)}
+            target_stats = {'max': float(max_target_dir), 'min': float(min_target_dir)}
+
+            # Get current timestamp
+            from datetime import datetime
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Save statistics to JSON file
+            stats = {
+                'source': source_stats,
+                'target': target_stats,
+                'metadata': {
+                    'pair_files_list': len(self.img_pairs),
+                    'date_calculated': current_time
+                }
+            }
+
+            with open(self.stats_file, 'w') as f:
+                json.dump(stats, f, indent=4)
+
+            print(f"Statistics saved to {self.stats_file}")
+            return source_stats, target_stats
+
+
+class MRITargetDataModule(pl.LightningDataModule):
+    def __init__(self, train_source_dir, train_target_dir, valid_source_dir, valid_target_dir,
+                    stats_file='./dataset_stats.json', batch_size=1, num_workers=4):
+        super().__init__()
+        self.save_hyperparameters()
+
+    def setup(self, stage=None):
+        self.train_dataset = MRITargetDataset(
+            self.hparams.train_source_dir,
+            self.hparams.train_target_dir,
+            self.hparams.stats_file
+        )
+
+        self.valid_dataset = MRITargetDataset(
+            self.hparams.valid_source_dir,
+            self.hparams.valid_target_dir,
+            self.hparams.stats_file
+        )
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=True,
+            num_workers=self.hparams.num_workers,
+            pin_memory=True
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            self.valid_dataset,
+            batch_size=self.hparams.batch_size,
+            shuffle=False,
+            num_workers=self.hparams.num_workers,
+            pin_memory=True
+        )
+
+
 
 
 class MRIDataModule2D(pl.LightningDataModule):

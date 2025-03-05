@@ -3,19 +3,28 @@ import os
 # Add the project root directory to Python's path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
-from data import MRIDataModule2D
+from data import MRIDataModule2D, MRITargetDataModule
 
 
 
 if __name__ == "__main__":
     # Create data module
-    data_module = MRIDataModule2D(
-        source_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/ConstraintTest/trainA",
-        target_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/ConstraintTest/trainB",
-        stats_file="./stats/dataset_stats.json",  # Specify stats file location
-        batch_size=1,
-        num_workers=4
-    )
+    # data_module = MRIDataModule2D(
+    #     source_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/ConstraintTest/trainA",
+    #     target_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/ConstraintTest/trainB",
+    #     stats_file="./stats/dataset_stats.json",  # Specify stats file location
+    #     batch_size=1,
+    #     num_workers=4
+    # )
+
+    data_module = MRITargetDataModule(train_source_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/Mri_Pair/PMC dataset/PMC dataset/2D/train/1.5T",
+                                             train_target_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/Mri_Pair/PMC dataset/PMC dataset/2D/train/3T",
+                                             valid_source_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/Mri_Pair/PMC dataset/PMC dataset/2D/validation/1.5T",
+                                             valid_target_dir="/home/venkat/Documents/Hacklytics_Hackathon/data/Mri_Pair/PMC dataset/PMC dataset/2D/validation/3T",
+                                             stats_file="../data/Mri_Pair/PMC dataset/PMC dataset/2D/stats.json",
+                                             batch_size=1,
+                                             num_workers=4)
+
 
     # Setup the data module
     data_module.setup()
@@ -26,5 +35,7 @@ if __name__ == "__main__":
 
     print("Source image shape:", batch['source'].shape)
     print("Target image shape:", batch['target'].shape)
+    print(f"source image min:{batch['source'][0].min()}, max:{batch['source'][0].max()}")
+    print(f"target image min:{batch['target'][0].min()}, max:{batch['target'][0].max()}")
     print("Source stats - min:", batch['source_global_min'], "max:", batch['source_global_max'])
     print("Target stats - min:", batch['target_global_min'], "max:", batch['target_global_max'])

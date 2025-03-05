@@ -7,10 +7,89 @@ import torch.nn as nn
 import torch.nn.functional as F
 from packaging import version
 
+from torchvision import models, transforms
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import OptimizerLRScheduler, STEP_OUTPUT
 
 from . import MultiScaleFusionGenerator, PatchSampleF, NLayerDiscriminator
+
+
+class PerceptualLoss(nn.Module):
+    def __init__(self, layers=[3, 8, 15, 22], weights=[1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4], device="cpu"):
+        super(PerceptualLoss, self).__init__()
+
+        # Load pretrained VGG19 and set to evaluation mode
+        vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features.eval()
+
+        # Freeze parameters
+        for param in vgg.parameters():
+            param.requires_grad = False
+
+        # Define normalization for VGG input
+        self.normalize = transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+
+        # Create feature extractors for specified layers
+        self.layers = nn.ModuleList()
+        self.weights = weights
+
+        previous_layer = 0
+        for layer_idx in layers:
+            self.layers.append(vgg[previous_layer:layer_idx + 1])
+            previous_layer = layer_idx + 1
+
+        # Move to GPU if available
+        self.device = device
+        self.to(self.device)
+
+    def preprocess(self, img):
+        """
+        Preprocess image for VGG
+        For grayscale: repeat across 3 channels and normalize
+        """
+        img = (img * 0.5) + 0.5
+
+        if torch.min(img) < 0.0 or torch.max(img) > 1.0:
+            raise ValueError("Image values should be between 0 and 1")
+
+        # If grayscale (1 channel), repeat to make 3 channels
+        if img.shape[1] == 1:
+            img = img.repeat(1, 3, 1, 1)
+
+        # Apply normalization
+        normalized = torch.zeros_like(img)
+        for i in range(img.shape[0]):
+            normalized[i] = self.normalize(img[i])
+
+        return normalized
+
+    def forward(self, output, target):
+        """
+        Calculate perceptual loss between output and target images
+
+        Args:
+            output: Generated image, grayscale [B, 1, H, W]
+            target: Target image, RGB [B, 3, H, W] or grayscale [B, 1, H, W]
+        """
+        # Preprocess both images
+        output_rgb = self.preprocess(output)
+        target_rgb = self.preprocess(target)
+
+        # Initialize loss
+        loss = 0.0
+
+        # Extract features and calculate MSE at each layer
+        for i, layer in enumerate(self.layers):
+            output_feature = layer(output_rgb)
+            target_feature = layer(target_rgb)
+
+            # L2 loss between features
+            layer_loss = F.mse_loss(output_feature, target_feature)
+            loss += self.weights[i] * layer_loss
+
+        return loss
 
 
 class PatchNCELoss(nn.Module):
@@ -105,6 +184,9 @@ class ContrastiveTraining(pl.LightningModule):
 
         self.automatic_optimization = False
         self.identity_loss = nn.MSELoss()
+        self.percep_loss = PerceptualLoss(layers=self.generator_config["percep_layers"],
+                                          weights=self.generator_config["percep_weights"],
+                                          device=self.device)
 
 
     def configure_optimizers(self):
@@ -185,10 +267,15 @@ class ContrastiveTraining(pl.LightningModule):
         # Calculate generator and identity losses
         pred_fake_target = self.discriminator(fake_image_target)
         loss_G_fake = self.l1_loss(pred_fake_target, torch.ones_like(pred_fake_target) * 0.9)
-        loss_G_identity = self.identity_loss(fake_image_identity, real_target)
+        loss_G_identity = self.percep_loss(fake_image_identity, real_target)
+
+        loss_paired = 0.0
+        if self.generator_config["paired_identity_loss"]:
+            loss_paired = self.percep_loss(fake_image_target, real_target)
+            self.log(f"{train_mode}_paired_loss", loss_paired, prog_bar=True, on_epoch=True)
 
         # Combine all losses
-        total_loss = loss_G_fake + loss_G_identity * 2.0 + nce_both
+        total_loss = loss_G_fake + loss_G_identity * 2.0 + nce_both + loss_paired
 
         # Logging
         self.log(f"{train_mode}_total_loss", total_loss, prog_bar=True, on_epoch=True)
